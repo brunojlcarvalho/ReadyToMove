@@ -9,6 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -33,11 +37,26 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+object MarkerColors {
+    val scooter: Color = Red40
+    val bike: Color = BabyBlue40
+    val bus: Color = lightGreen40
+}
+
+private val LocalMarkerColors = staticCompositionLocalOf { MarkerColors }
+
+object Theme {
+    val markerColors: MarkerColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalMarkerColors.current
+}
+
 @Composable
 fun ReadyToMoveTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -50,9 +69,11 @@ fun ReadyToMoveTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalMarkerColors provides MarkerColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
