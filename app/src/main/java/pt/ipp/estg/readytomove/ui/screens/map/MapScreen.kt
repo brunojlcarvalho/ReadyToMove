@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -22,7 +23,15 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
+import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
+import pt.ipp.estg.readytomove.R
+import pt.ipp.estg.readytomove.data.model.OperatorMarker
+import pt.ipp.estg.readytomove.ui.theme.Theme
+
+enum class TripState {
+    IDLE, RUNNING, PAUSED
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,8 +41,9 @@ fun MapScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
 
     var hasPermission by remember { mutableStateOf(false) }
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+    var tripState by remember { mutableStateOf(TripState.IDLE) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -68,6 +78,7 @@ fun MapScreen(navController: NavHostController) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = false,
         drawerContent = {
             ModalDrawerSheet {
                 Text(
@@ -110,11 +121,6 @@ fun MapScreen(navController: NavHostController) {
                         }
                     }
                 )
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = { viewModel.getUserLocation() }) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Centrar localização")
-                }
             }
         ) { padding ->
             Box(
@@ -143,21 +149,100 @@ fun MapScreen(navController: NavHostController) {
                         }
                     }
 
+                    val context = LocalContext.current
+
                     val operators = listOf(
-                        LatLng(41.368, -8.195),
-                        LatLng(41.372, -8.191),
-                        LatLng(41.365, -8.198)
+                        OperatorMarker(LatLng(41.368, -8.195), "Trotinetas", R.drawable.ic_scooter),
+                        OperatorMarker(LatLng(41.372, -8.191), "Bicicletas", R.drawable.ic_bike),
+                        OperatorMarker(LatLng(41.365, -8.198), "Autocarros", R.drawable.ic_bus)
                     )
 
-                    operators.forEachIndexed { i, pos ->
+                    val scooterColor = Theme.markerColors.scooter
+                    val bikeColor = Theme.markerColors.bike
+                    val busColor = Theme.markerColors.bus
+
+                    val operatorColors = listOf(scooterColor, bikeColor, busColor)
+
+                    operators.forEachIndexed { i, op ->
+                        val markerColor = operatorColors[i].toArgb()
+
                         Marker(
-                            state = MarkerState(position = pos),
-                            title = "Operador ${i + 1}",
-                            snippet = "Trotinetas disponíveis"
+                            state = MarkerState(position = op.position),
+                            title = op.title,
+                            snippet = "Ponto ${i + 1}",
+                            icon = bitmapDescriptorFromVector(
+                                context,
+                                op.iconRes,
+                                markerColor,
+                                0.1f
+                            )
                         )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    when (tripState) {
+                        TripState.IDLE -> {
+                            Button(
+                                onClick = { tripState = TripState.RUNNING },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Text("Iniciar Viagem")
+                            }
+                        }
+
+                        TripState.RUNNING -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Button(
+                                    onClick = { tripState = TripState.PAUSED },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary
+                                    )
+                                ) {
+                                    Text("Pausar")
+                                }
+                                Button(
+                                    onClick = { tripState = TripState.IDLE },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Parar")
+                                }
+                            }
+                        }
+
+                        TripState.PAUSED -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Button(
+                                    onClick = { tripState = TripState.RUNNING },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text("Retomar")
+                                }
+                                Button(
+                                    onClick = { tripState = TripState.IDLE },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Parar")
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
