@@ -9,6 +9,7 @@ import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
 import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
 import pt.ipp.estg.readytomove.ui.screens.map.MapScreen
 import pt.ipp.estg.readytomove.ui.screens.profile.ProfileScreen
+import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 
 @Composable
 fun ReadyToMoveApp() {
@@ -18,5 +19,6 @@ fun ReadyToMoveApp() {
         composable("map") { MapScreen(navController) }
         composable("profile") { ProfileScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
+        composable("travel_history") { TravelHistoryScreen(navController) }
     }
 }

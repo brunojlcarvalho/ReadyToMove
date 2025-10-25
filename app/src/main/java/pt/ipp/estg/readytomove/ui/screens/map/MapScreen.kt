@@ -104,6 +104,14 @@ fun MapScreen(navController: NavHostController) {
                         navController.navigate("leaderboard")
                     }
                 )
+                NavigationDrawerItem(
+                    label = { Text("Travel History") },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("travel_history")
+                    }
+                )
             }
         }
     ) {
@@ -245,4 +253,3 @@ fun MapScreen(navController: NavHostController) {
         }
     }
 }
-
