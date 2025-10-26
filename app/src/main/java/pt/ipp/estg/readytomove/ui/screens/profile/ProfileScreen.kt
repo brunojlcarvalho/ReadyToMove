@@ -30,7 +30,7 @@ fun ProfileScreen(navController: NavHostController) {
     val user by viewModel.user.collectAsState()
 
     var isEditing by remember { mutableStateOf(false) }
-    var tempName by remember { mutableStateOf(user.name) }
+    var tempName by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -43,90 +43,115 @@ fun ProfileScreen(navController: NavHostController) {
                 }
             )
         }
-    ){ padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            Spacer(modifier = Modifier.height(40.dp))
+    ) { padding ->
+        if (user == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(40.dp))
 
-            if (user.avatarUrl != null) {
-                AsyncImage(
-                    model = user.avatarUrl,
-                    contentDescription = "Avatar",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = user.name.first().uppercase(),
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold
+                if (user?.avatarUrl != null) {
+                    AsyncImage(
+                        model = user?.avatarUrl,
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = user?.name?.firstOrNull()?.uppercase() ?: "?",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            if (isEditing) {
-                OutlinedTextField(
-                    value = tempName,
-                    onValueChange = { tempName = it },
-                    label = { Text("Nome") }
-                )
+                if (isEditing) {
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { tempName = it },
+                        label = { Text("Novo nome") },
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        if (tempName.isNotBlank()) {
+                            viewModel.updateName(tempName)
+                        }
+                        isEditing = false
+                    }) {
+                        Text("Guardar")
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = user!!.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = {
+                            tempName = user!!.name
+                            isEditing = true
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar nome")
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = {
-                    viewModel.updateName(tempName)
-                    isEditing = false
-                }) {
-                    Text("Guardar")
+                Text(user!!.email, color = Color.Gray)
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    StatCard("Pontos", user!!.points.toString())
+                    StatCard("Viagens", user!!.totalTrips.toString())
                 }
-            } else {
-                Text(
-                    text = user.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { isEditing = true }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar nome")
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Button(
+                    onClick = {
+                        viewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo("map") { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Icon(Icons.Default.ExitToApp, contentDescription = "Sair")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Terminar sessão")
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(user.email, color = Color.Gray)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatCard("Pontos", user.points.toString())
-                StatCard("Viagens", user.totalTrips.toString())
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Button(
-                onClick = { viewModel.logout() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-            ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = "Sair")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Terminar sessão")
             }
         }
     }
