@@ -80,12 +80,30 @@ fun MapScreen(navController: NavHostController) {
         drawerState = drawerState,
         gesturesEnabled = false,
         drawerContent = {
-            ModalDrawerSheet {
-                Text(
-                    "Menu ReadyToMove",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
+            ModalDrawerSheet(
+                modifier = Modifier.width(280.dp) // opcional: limitar largura da navbar
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                ) {
+                    IconButton(onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            navController.navigate("map")
+                        }
+                    }) {
+                        Icon(Icons.Default.Menu, contentDescription = "Fechar e ir para mapa")
+                    }
+
+                    Text(
+                        "Menu ReadyToMove",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
 
                 NavigationDrawerItem(
                     label = { Text("Perfil") },
@@ -104,6 +122,7 @@ fun MapScreen(navController: NavHostController) {
                         navController.navigate("leaderboard")
                     }
                 )
+
                 NavigationDrawerItem(
                     label = { Text("Travel History") },
                     selected = false,

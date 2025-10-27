@@ -1,32 +1,32 @@
 package pt.ipp.estg.readytomove.ui.screens.home
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import pt.ipp.estg.readytomove.R
 import com.example.readytomove.ui.auth.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(viewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
+fun RegisterScreen(
+    viewModel: AuthViewModel,
+    onRegisterSuccess: () -> Unit,
+    onLoginClick: () -> Unit
+) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -34,11 +34,24 @@ fun RegisterScreen(viewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Cria a tua conta", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Image(
+            painter = painterResource(id = R.drawable.readytomove_symbol),
+            contentDescription = "Logo ReadyToMove",
+            modifier = Modifier
+                .height(120.dp)
+                .fillMaxWidth(),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text("ReadyToMove", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") })
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
@@ -67,7 +80,12 @@ fun RegisterScreen(viewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
             Text("Registar")
         }
 
+        Spacer(Modifier.height(8.dp))
+
+        TextButton(onClick = onLoginClick) {
+            Text("Já tens conta? Inicia sessão")
+        }
+
         errorMessage?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
     }
 }
-

@@ -28,7 +28,8 @@ fun ReadyToMoveApp() {
         composable("register") {
             RegisterScreen(
                 viewModel(),
-                onRegisterSuccess = { navController.navigate("map") }
+                onRegisterSuccess = { navController.navigate("map") },
+                onLoginClick = { navController.navigate("login") }
             )
         }
         composable("map") { MapScreen(navController) }
