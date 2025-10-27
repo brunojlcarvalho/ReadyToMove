@@ -1,13 +1,13 @@
-  {
+{
   "project_info": {
-    "project_number": "59036548555",
-    "project_id": "readytomove-a83b0",
-    "storage_bucket": "readytomove-a83b0.firebasestorage.app"
+    "project_number": "1058387990445",
+    "project_id": "readytomove-14700",
+    "storage_bucket": "readytomove-14700.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:59036548555:android:f7e35f469653aba36b4a4e",
+        "mobilesdk_app_id": "1:1058387990445:android:405f4ee3ec89571270b324",
         "android_client_info": {
           "package_name": "pt.ipp.estg.readytomove"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDcVm6lVDqBJhG-VYEoNa4RVemgJXRCdd4"
+          "current_key": "AIzaSyCiN3EUqLtNOLSHWBvljwaPktqrGlqInFU"
         }
       ],
       "services": {
