@@ -10,6 +10,9 @@ import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import pt.ipp.estg.readytomove.data.geoapify.GeoapifyDataSource
+import pt.ipp.estg.readytomove.data.model.OperatorPoint
+import pt.ipp.estg.readytomove.data.network.NetworkModule
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -19,6 +22,14 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private val _currentLocation = MutableStateFlow<Location?>(null)
     val currentLocation: StateFlow<Location?> = _currentLocation
 
+    private val _operatorPoints = MutableStateFlow<List<OperatorPoint>>(emptyList())
+    val operatorPoints: StateFlow<List<OperatorPoint>> = _operatorPoints
+
+    private val geoapify = GeoapifyDataSource(
+        retrofit = NetworkModule.retrofit("https://api.geoapify.com/"),
+        apiKey = "18d9603dbce24498a3959b908acfa516"
+    )
+
     @SuppressLint("MissingPermission")
     fun getUserLocation() {
         viewModelScope.launch {
@@ -27,4 +38,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun loadOperators() {
+        viewModelScope.launch {
+            try {
+                val busStops = geoapify.fetchBusStops()
+                val bikes = geoapify.fetchBikeRentals()
+                _operatorPoints.value = busStops + bikes
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _operatorPoints.value = emptyList()
+            }
+        }
+    }
+
 }
