@@ -32,7 +32,6 @@ import pt.ipp.estg.readytomove.ui.theme.Theme
 enum class TripState {
     IDLE, RUNNING, PAUSED
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(navController: NavHostController) {
@@ -49,7 +48,10 @@ fun MapScreen(navController: NavHostController) {
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
             hasPermission = granted
-            if (granted) viewModel.getUserLocation()
+            if (granted) {
+                viewModel.getUserLocation()
+                viewModel.loadOperators()
+            }
         }
     )
 
@@ -61,6 +63,7 @@ fun MapScreen(navController: NavHostController) {
             ) == PackageManager.PERMISSION_GRANTED -> {
                 hasPermission = true
                 viewModel.getUserLocation()
+                viewModel.loadOperators()
             }
 
             else -> permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -68,6 +71,8 @@ fun MapScreen(navController: NavHostController) {
     }
 
     val location by viewModel.currentLocation.collectAsState()
+    val operatorPoints by viewModel.operatorPoints.collectAsState()
+
     val mapProperties = remember { mutableStateOf(MapProperties(isMyLocationEnabled = hasPermission)) }
     val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false)) }
 
@@ -137,7 +142,7 @@ fun MapScreen(navController: NavHostController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("ReadyToMove 🌱") },
+                    title = { Text("ReadyToMove") },
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
@@ -176,30 +181,26 @@ fun MapScreen(navController: NavHostController) {
                         }
                     }
 
-                    val context = LocalContext.current
+                    operatorPoints.forEachIndexed { i, op ->
+                        val iconRes = when (op.type.name) {
+                            "BUS" -> R.drawable.ic_bus
+                            "BIKE" -> R.drawable.ic_bike
+                            else -> R.drawable.ic_scooter
+                        }
 
-                    val operators = listOf(
-                        OperatorMarker(LatLng(41.368, -8.195), "Trotinetas", R.drawable.ic_scooter),
-                        OperatorMarker(LatLng(41.372, -8.191), "Bicicletas", R.drawable.ic_bike),
-                        OperatorMarker(LatLng(41.365, -8.198), "Autocarros", R.drawable.ic_bus)
-                    )
-
-                    val scooterColor = Theme.markerColors.scooter
-                    val bikeColor = Theme.markerColors.bike
-                    val busColor = Theme.markerColors.bus
-
-                    val operatorColors = listOf(scooterColor, bikeColor, busColor)
-
-                    operators.forEachIndexed { i, op ->
-                        val markerColor = operatorColors[i].toArgb()
+                        val markerColor = when (op.type.name) {
+                            "BUS" -> Theme.markerColors.bus.toArgb()
+                            "BIKE" -> Theme.markerColors.bike.toArgb()
+                            else -> Theme.markerColors.scooter.toArgb()
+                        }
 
                         Marker(
-                            state = MarkerState(position = op.position),
-                            title = op.title,
+                            state = MarkerState(LatLng(op.lat, op.lon)),
+                            title = op.name,
                             snippet = "Ponto ${i + 1}",
                             icon = bitmapDescriptorFromVector(
                                 context,
-                                op.iconRes,
+                                iconRes,
                                 markerColor,
                                 0.1f
                             )
