@@ -26,7 +26,6 @@ import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
 import pt.ipp.estg.readytomove.R
-import pt.ipp.estg.readytomove.data.model.OperatorMarker
 import pt.ipp.estg.readytomove.ui.theme.Theme
 
 enum class TripState {
