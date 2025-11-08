@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.data.geoapify.GeoapifyDataSource
 import pt.ipp.estg.readytomove.data.model.OperatorPoint
-import pt.ipp.estg.readytomove.data.network.NetworkModule
+import pt.ipp.estg.readytomove.data.retrofit.RetrofitHelper
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -26,7 +26,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     val operatorPoints: StateFlow<List<OperatorPoint>> = _operatorPoints
 
     private val geoapify = GeoapifyDataSource(
-        retrofit = NetworkModule.retrofit("https://api.geoapify.com/"),
+        retrofit = RetrofitHelper.retrofit("https://api.geoapify.com/"),
         apiKey = "18d9603dbce24498a3959b908acfa516"
     )
 
