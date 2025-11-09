@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -141,14 +142,18 @@ fun MapScreen(navController: NavHostController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("ReadyToMove") },
+                    title = { },
+
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
                                 if (drawerState.isClosed) drawerState.open() else drawerState.close()
                             }
                         }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 )
@@ -156,8 +161,8 @@ fun MapScreen(navController: NavHostController) {
         ) { padding ->
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                    .fillMaxSize(),
+                    // .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 GoogleMap(
@@ -210,6 +215,7 @@ fun MapScreen(navController: NavHostController) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .padding(padding)
                         .padding(bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
