@@ -34,7 +34,7 @@ fun LoginScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit, onRegister
             painter = painterResource(id = R.drawable.readytomove_symbol),
             contentDescription = "Logo ReadyToMove",
             modifier = Modifier
-                .height(120.dp)
+                .height(170.dp)
                 .fillMaxWidth(),
             contentScale = ContentScale.Fit
         )
