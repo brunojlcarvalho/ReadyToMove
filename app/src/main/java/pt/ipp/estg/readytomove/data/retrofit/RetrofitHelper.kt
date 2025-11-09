@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitHelper {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
     private val moshi = Moshi.Builder()
