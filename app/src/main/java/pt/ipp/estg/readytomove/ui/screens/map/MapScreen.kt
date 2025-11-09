@@ -23,6 +23,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import com.google.android.gms.maps.model.MapStyleOptions
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
@@ -73,7 +74,15 @@ fun MapScreen(navController: NavHostController) {
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
 
-    val mapProperties = remember { mutableStateOf(MapProperties(isMyLocationEnabled = hasPermission)) }
+    val mapProperties = remember {
+        mutableStateOf(
+            MapProperties(
+                isMyLocationEnabled = hasPermission,
+                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style)
+            )
+        )
+    }
+
     val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false)) }
 
     val defaultPosition = LatLng(41.367, -8.194)
