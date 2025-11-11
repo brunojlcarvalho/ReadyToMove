@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +30,26 @@ import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.ui.theme.Theme
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.input.pointer.pointerInput
+
 
 enum class TripState {
     IDLE, RUNNING, PAUSED
@@ -44,6 +65,9 @@ fun MapScreen(navController: NavHostController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     var tripState by remember { mutableStateOf(TripState.IDLE) }
+
+    val systemDark = isSystemInDarkTheme()
+    var isDarkTheme by rememberSaveable { mutableStateOf(systemDark) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -94,58 +118,25 @@ fun MapScreen(navController: NavHostController) {
         drawerState = drawerState,
         gesturesEnabled = false,
         drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(280.dp) // opcional: limitar largura da navbar
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    IconButton(onClick = {
-                        scope.launch {
-                            drawerState.close()
-                            navController.navigate("map")
-                        }
-                    }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Fechar e ir para mapa")
-                    }
-
-                    Text(
-                        "Menu ReadyToMove",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(start = 8.dp)
+            AppDrawer(
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = { enabled ->
+                    isDarkTheme = enabled
+                    AppCompatDelegate.setDefaultNightMode(
+                        if (enabled) AppCompatDelegate.MODE_NIGHT_YES
+                        else AppCompatDelegate.MODE_NIGHT_NO
                     )
+                },
+                onNavigate = { route ->
+                    scope.launch {
+                        drawerState.close()
+                        navController.navigate(route)
+                    }
+                },
+                onClose = {
+                    scope.launch { drawerState.close() }
                 }
-
-                NavigationDrawerItem(
-                    label = { Text("Perfil") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("profile")
-                    }
-                )
-
-                NavigationDrawerItem(
-                    label = { Text("Leaderboard") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("leaderboard")
-                    }
-                )
-
-                NavigationDrawerItem(
-                    label = { Text("Travel History") },
-                    selected = false,
-                    onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("travel_history")
-                    }
-                )
-            }
+            )
         }
     ) {
         Scaffold(
@@ -284,6 +275,168 @@ fun MapScreen(navController: NavHostController) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppDrawer(
+    isDarkTheme: Boolean,
+    onToggleTheme: (Boolean) -> Unit,
+    onNavigate: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(170.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.align(Alignment.CenterStart),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.readytomove_symbol),
+                    contentDescription = "Logo ReadyToMove",
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
+                        .padding(8.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(
+                        "ReadyToMove",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        "Explora a cidade",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
+                }
+            }
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Fechar",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        NavigationDrawerItem(
+            label = { Text("Mapa") },
+            selected = false,
+            onClick = { onNavigate("map") },
+            icon = { Icon(Icons.Default.MyLocation, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Perfil") },
+            selected = false,
+            onClick = { onNavigate("profile") },
+            icon = { Icon(Icons.Default.Person, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Leaderboard") },
+            selected = false,
+            onClick = { onNavigate("leaderboard") },
+            icon = { Icon(Icons.Default.EmojiEvents, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Histórico de Viagens") },
+            selected = false,
+            onClick = { onNavigate("travel_history") },
+            icon = { Icon(Icons.Default.History, contentDescription = null) }
+        )
+
+        Spacer(Modifier.height(12.dp))
+        Divider()
+        Spacer(Modifier.height(12.dp))
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        ThemeToggle(
+            isDark = isDarkTheme,
+            onToggle = { onToggleTheme(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+    }
+}
+
+@Composable
+private fun ThemeToggle(
+    isDark: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val trackWidth = 120.dp
+    val thumbSize = 40.dp
+    val padding = 8.dp
+    val endOffset = trackWidth - thumbSize - padding
+    val animatedOffset by animateDpAsState(
+        targetValue = if (isDark) endOffset else padding,
+        label = ""
+    )
+
+    Box(
+        modifier = modifier
+            .height(56.dp)
+            .width(trackWidth)
+            .clip(RoundedCornerShape(32.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .pointerInput(isDark) { detectTapGestures { onToggle(!isDark) } }
+            .padding(horizontal = 0.dp, vertical = 8.dp)
+    ) {
+        Icon(
+            Icons.Default.LightMode,
+            contentDescription = null,
+            tint = if (!isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 16.dp)
+        )
+        Icon(
+            Icons.Default.DarkMode,
+            contentDescription = null,
+            tint = if (isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp)
+        )
+        Box(
+            modifier = Modifier
+                .size(thumbSize)
+                .offset(x = animatedOffset)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable { onToggle(!isDark) },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
         }
     }
 }
