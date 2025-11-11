@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import pt.ipp.estg.readytomove.R
-import com.example.readytomove.ui.auth.AuthViewModel
+import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
