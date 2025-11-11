@@ -14,9 +14,13 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
+import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
 import pt.ipp.estg.readytomove.ui.navigation.ReadyToMoveApp
+import pt.ipp.estg.readytomove.ui.screens.home.RegisterScreen
+import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
 import pt.ipp.estg.readytomove.ui.screens.map.MapScreen
+import pt.ipp.estg.readytomove.ui.screens.profile.ProfileScreen
+import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,5 +50,21 @@ class MainActivity : ComponentActivity() {
 fun MapScreenPreview() {
     ReadyToMoveTheme {
         MapScreen(navController = rememberNavController())
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LeaderboardPreview() {
+    ReadyToMoveTheme {
+        LeaderboardScreen(navController = rememberNavController())
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TravelHistoryPreview() {
+    ReadyToMoveTheme {
+        TravelHistoryScreen(navController = rememberNavController())
     }
 }
