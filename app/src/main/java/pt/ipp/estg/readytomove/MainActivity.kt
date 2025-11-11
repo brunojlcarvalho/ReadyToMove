@@ -7,38 +7,39 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
 import pt.ipp.estg.readytomove.ui.navigation.ReadyToMoveApp
-import pt.ipp.estg.readytomove.ui.screens.home.RegisterScreen
 import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
 import pt.ipp.estg.readytomove.ui.screens.map.MapScreen
-import pt.ipp.estg.readytomove.ui.screens.profile.ProfileScreen
 import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
 
 class MainActivity : ComponentActivity() {
+    private var isDarkTheme by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         FirebaseApp.initializeApp(this)
-        val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        firebaseAppCheck.installAppCheckProviderFactory(
+        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
             DebugAppCheckProviderFactory.getInstance()
         )
         setContent {
-            ReadyToMoveTheme {
+            ReadyToMoveTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ReadyToMoveApp()
+                    ReadyToMoveApp(
+                        isDarkTheme = isDarkTheme,
+                        onToggleTheme = { isDarkTheme = it }
+                    )
                 }
             }
         }
@@ -48,8 +49,13 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun MapScreenPreview() {
-    ReadyToMoveTheme {
-        MapScreen(navController = rememberNavController())
+    var dark by remember { mutableStateOf(false) }
+    ReadyToMoveTheme(darkTheme = dark) {
+        MapScreen(
+            navController = rememberNavController(),
+            isDarkTheme = dark,
+            onToggleTheme = { dark = it }
+        )
     }
 }
 

@@ -14,7 +14,10 @@ import pt.ipp.estg.readytomove.ui.screens.profile.ProfileScreen
 import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 
 @Composable
-fun ReadyToMoveApp() {
+fun ReadyToMoveApp(
+    isDarkTheme: Boolean,
+    onToggleTheme: (Boolean) -> Unit
+) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "login") {
@@ -32,7 +35,13 @@ fun ReadyToMoveApp() {
                 onLoginClick = { navController.navigate("login") }
             )
         }
-        composable("map") { MapScreen(navController) }
+        composable("map") {
+            MapScreen(
+                navController = navController,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme
+            )
+        }
         composable("profile") { ProfileScreen(navController) }
         composable("leaderboard") { LeaderboardScreen(navController) }
         composable("travel_history") { TravelHistoryScreen(navController) }
