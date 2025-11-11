@@ -15,11 +15,28 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
-
+import androidx.compose.ui.tooling.preview.Preview
+import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit, onRegisterClick: () -> Unit) {
+    LoginScreenContent(
+        onLogin = { email, password, callback ->
+            viewModel.loginUser(email, password) { success, error -> callback(success, error) }
+        },
+        onLoginSuccess = onLoginSuccess,
+        onRegisterClick = onRegisterClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LoginScreenContent(
+    onLogin: (String, String, (Boolean, String?) -> Unit) -> Unit,
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -41,18 +58,20 @@ fun LoginScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit, onRegister
         )
 
         Spacer(Modifier.height(12.dp))
-
         Text("ReadyToMove", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
         OutlinedTextField(
-            value = password, onValueChange = { password = it },
-            label = { Text("Password") }, visualTransformation = PasswordVisualTransformation()
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation()
         )
+
         Spacer(Modifier.height(16.dp))
         Button(onClick = {
-            viewModel.loginUser(email, password) { success, error ->
+            onLogin(email, password) { success, error ->
                 if (success) onLoginSuccess() else errorMessage = error
             }
         }) { Text("Login") }
@@ -61,5 +80,17 @@ fun LoginScreen(viewModel: AuthViewModel, onLoginSuccess: () -> Unit, onRegister
 
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onRegisterClick) { Text("Ainda não tens conta? Regista-te") }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginScreenPreview() {
+    ReadyToMoveTheme {
+        LoginScreenContent(
+            onLogin = { _, _, cb -> cb(true, null) },
+            onLoginSuccess = {},
+            onRegisterClick = {}
+        )
     }
 }

@@ -19,11 +19,29 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
+import androidx.compose.ui.tooling.preview.Preview
+import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
+    onRegisterSuccess: () -> Unit,
+    onLoginClick: () -> Unit
+) {
+    RegisterScreenContent(
+        onRegister = { name, email, password, callback ->
+            viewModel.registerUser(name, email, password) { success, error -> callback(success, error) }
+        },
+        onRegisterSuccess = onRegisterSuccess,
+        onLoginClick = onLoginClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RegisterScreenContent(
+    onRegister: (String, String, String, (Boolean, String?) -> Unit) -> Unit,
     onRegisterSuccess: () -> Unit,
     onLoginClick: () -> Unit
 ) {
@@ -50,7 +68,6 @@ fun RegisterScreen(
         )
 
         Spacer(Modifier.height(12.dp))
-
         Text("ReadyToMove", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome") })
@@ -72,20 +89,31 @@ fun RegisterScreen(
 
         Button(onClick = {
             if (password == confirmPassword) {
-                viewModel.registerUser(name, email, password) { success, error ->
+                onRegister(name, email, password) { success, error ->
                     if (success) onRegisterSuccess() else errorMessage = error
                 }
-            } else errorMessage = "As passwords não coincidem"
+            } else {
+                errorMessage = "As passwords não coincidem"
+            }
         }) {
             Text("Registar")
         }
 
         Spacer(Modifier.height(8.dp))
-
-        TextButton(onClick = onLoginClick) {
-            Text("Já tens conta? Inicia sessão")
-        }
+        TextButton(onClick = onLoginClick) { Text("Já tens conta? Inicia sessão") }
 
         errorMessage?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RegisterScreenPreview() {
+    ReadyToMoveTheme {
+        RegisterScreenContent(
+            onRegister = { _, _, _, cb -> cb(true, null) },
+            onRegisterSuccess = {},
+            onLoginClick = {}
+        )
     }
 }
