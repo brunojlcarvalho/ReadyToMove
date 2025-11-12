@@ -96,7 +96,7 @@ fun MapScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = true,
+        gesturesEnabled = false,
         drawerContent = {
             AppDrawer(
                 isDarkTheme = isDarkTheme,
