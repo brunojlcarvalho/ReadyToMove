@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -27,12 +28,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -456,5 +460,61 @@ private fun ThemeToggle(
                 modifier = Modifier.size(16.dp)
             )
         }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+private fun fakeWindowSizeClass(
+    width: WindowWidthSizeClass,
+    height: WindowHeightSizeClass
+): WindowSizeClass {
+    val w = when (width) {
+        WindowWidthSizeClass.Compact -> 360.dp
+        WindowWidthSizeClass.Medium -> 800.dp
+        WindowWidthSizeClass.Expanded -> 1200.dp
+        else -> 360.dp
+    }
+    val h = when (height) {
+        WindowHeightSizeClass.Compact -> 360.dp
+        WindowHeightSizeClass.Medium -> 640.dp
+        WindowHeightSizeClass.Expanded -> 900.dp
+        else -> 640.dp
+    }
+    return WindowSizeClass.calculateFromSize(DpSize(w, h))
+}
+
+@Preview(showBackground = true, name = "Map - Phone")
+@Composable
+private fun MapScreenPreview_Phone() {
+    var dark by remember { mutableStateOf(false) }
+    MaterialTheme {
+        val nav = rememberNavController()
+        MapScreen(
+            navController = nav,
+            isDarkTheme = dark,
+            onToggleTheme = { dark = it },
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Compact,
+                WindowHeightSizeClass.Medium
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Map - Tablet")
+@Composable
+private fun MapScreenPreview_Tablet() {
+    var dark by remember { mutableStateOf(true) }
+    MaterialTheme {
+        val nav = rememberNavController()
+        MapScreen(
+            navController = nav,
+            isDarkTheme = dark,
+            onToggleTheme = { dark = it },
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Medium,
+                WindowHeightSizeClass.Medium
+            )
+        )
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -43,6 +44,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.unit.DpSize
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -210,7 +214,10 @@ private fun ProfileScreenScaffold(
 
             item {
                 if (isTablet) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         ProfileStatsSection(
                             points = points,
                             trips = totalTrips,
@@ -220,8 +227,10 @@ private fun ProfileScreenScaffold(
                         ProfileInfoCard(
                             title = "Informações",
                             rows = listOf(
-                                InfoRowData("E-mail", userEmail),
-                                InfoRowData("Nível", "Nível ${(points / 500) + 1}")
+                                InfoRowData("Nome", userName),
+                                InfoRowData("Email", userEmail),
+                                InfoRowData("Viagens", totalTrips.toString()),
+                                InfoRowData("Pontos", points.toString())
                             ),
                             modifier = Modifier.weight(1f)
                         )
@@ -233,14 +242,14 @@ private fun ProfileScreenScaffold(
                         modifier = Modifier.fillMaxWidth(),
                         cardHeight = statCardHeight
                     )
-
                     Spacer(Modifier.height(12.dp))
-
                     ProfileInfoCard(
                         title = "Informações",
                         rows = listOf(
-                            InfoRowData("E-mail", userEmail),
-                            InfoRowData("Nível", "Nível ${(points / 500) + 1}")
+                            InfoRowData("Nome", userName),
+                            InfoRowData("Email", userEmail),
+                            InfoRowData("Viagens", totalTrips.toString()),
+                            InfoRowData("Pontos", points.toString())
                         )
                     )
                 }
@@ -268,7 +277,6 @@ private fun ProfileScreenScaffold(
     }
 }
 
-
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun ProfileHeader(
@@ -293,7 +301,6 @@ private fun ProfileHeader(
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
         )
     )
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,22 +333,22 @@ private fun ProfileHeader(
                         contentDescription = "Avatar",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(avatarSize - 8.dp)
+                            .fillMaxSize()
                             .clip(CircleShape)
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(avatarSize - 8.dp)
+                            .fillMaxSize()
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = name.firstOrNull()?.uppercase() ?: "?",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = if (isTablet) 56.sp else 42.sp,
-                            fontWeight = FontWeight.Black
+                            fontSize = if (isTablet) 42.sp else 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -352,49 +359,48 @@ private fun ProfileHeader(
             AnimatedContent(
                 targetState = isEditing,
                 transitionSpec = {
-                    fadeIn(animationSpec = tween(durationMillis = 200)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 200))
+                    fadeIn(animationSpec = tween(200)) togetherWith
+                            fadeOut(animationSpec = tween(200))
                 },
                 label = "nameEdit"
             ) { editing ->
                 if (editing) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedTextField(
+                        TextField(
                             value = tempName,
                             onValueChange = onTempChange,
                             singleLine = true,
-                            modifier = Modifier.widthIn(max = if (isTablet) 420.dp else 280.dp),
-                            shape = RoundedCornerShape(12.dp),
+                            textStyle = LocalTextStyle.current.copy(
+                                fontSize = nameFontSize,
+                                fontWeight = FontWeight.Bold
+                            ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { onSaveEdit() }),
                             placeholder = { Text("Novo nome") }
                         )
-                        TextButton(onClick = onSaveEdit) { Text("Guardar") }
-                        TextButton(onClick = onCancelEdit) { Text("Cancelar") }
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(onClick = onSaveEdit) {
+                            Icon(Icons.Default.Edit, contentDescription = "Guardar", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        IconButton(onClick = onCancelEdit) {
+                            Icon(Icons.Default.ExitToApp, contentDescription = "Cancelar", tint = MaterialTheme.colorScheme.onPrimary)
+                        }
                     }
                 } else {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = name,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = nameFontSize
+                            name,
+                            fontSize = nameFontSize,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
-                        IconButton(
-                            onClick = onStartEdit,
-                            modifier = Modifier.size(if (isTablet) 32.dp else 28.dp),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar nome")
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(onClick = onStartEdit) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar nome", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -529,3 +535,68 @@ fun StatCard(
     }
 }
 
+/* ------- Adições mínimas para Preview ------- */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+private fun fakeWindowSizeClass(
+    width: WindowWidthSizeClass,
+    height: WindowHeightSizeClass
+): WindowSizeClass {
+    val w = when (width) {
+        WindowWidthSizeClass.Compact -> 360.dp
+        WindowWidthSizeClass.Medium -> 800.dp
+        WindowWidthSizeClass.Expanded -> 1200.dp
+        else -> 360.dp
+    }
+    val h = when (height) {
+        WindowHeightSizeClass.Compact -> 360.dp
+        WindowHeightSizeClass.Medium -> 640.dp
+        WindowHeightSizeClass.Expanded -> 900.dp
+        else -> 640.dp
+    }
+    return WindowSizeClass.calculateFromSize(DpSize(w, h))
+}
+
+@Preview(showBackground = true, name = "Profile - Phone")
+@Composable
+private fun ProfileScreenPreview_Phone() {
+    val nav = rememberNavController()
+    MaterialTheme {
+        ProfileScreenScaffold(
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Compact,
+                WindowHeightSizeClass.Medium
+            ),
+            userName = "Ana Silva",
+            userEmail = "ana.silva@example.com",
+            avatarUrl = null,
+            points = 1250,
+            totalTrips = 42,
+            onBack = {},
+            onUpdateName = {},
+            onLogout = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Profile - Tablet")
+@Composable
+private fun ProfileScreenPreview_Tablet() {
+    val nav = rememberNavController()
+    MaterialTheme {
+        ProfileScreenScaffold(
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Medium,
+                WindowHeightSizeClass.Medium
+            ),
+            userName = "Bruno Costa",
+            userEmail = "bruno.costa@example.com",
+            avatarUrl = null,
+            points = 3420,
+            totalTrips = 128,
+            onBack = {},
+            onUpdateName = {},
+            onLogout = {}
+        )
+    }
+}

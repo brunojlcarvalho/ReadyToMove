@@ -14,6 +14,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pt.ipp.estg.readytomove.R
@@ -28,9 +29,9 @@ fun LoginScreen(
 ) {
     LoginScreenContent(
         windowSizeClass = windowSizeClass,
-        onLogin = { email, password, callback ->
-            viewModel.loginUser(email, password) { success, error ->
-                callback(success, error)
+        onLogin = { email, pass, cb ->
+            viewModel.loginUser(email, pass) { success, error ->
+                cb(success, error)
             }
         },
         onLoginSuccess = onLoginSuccess,
@@ -50,37 +51,50 @@ private fun LoginScreenContent(
     val heightClass = windowSizeClass.heightSizeClass
 
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
-    val isPortraitPhone =
-        widthClass == WindowWidthSizeClass.Compact && heightClass == WindowHeightSizeClass.Expanded
+    val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
+            heightClass == WindowHeightSizeClass.Expanded
 
+    LoginScreenLayout(
+        isTablet = isTablet,
+        isPortraitPhone = isPortraitPhone,
+        onLogin = onLogin,
+        onLoginSuccess = onLoginSuccess,
+        onRegisterClick = onRegisterClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LoginScreenLayout(
+    isTablet: Boolean,
+    isPortraitPhone: Boolean,
+    onLogin: (String, String, (Boolean, String?) -> Unit) -> Unit,
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
+) {
     val contentWidthFraction = when {
         isTablet -> 0.5f
         isPortraitPhone -> 0.9f
         else -> 0.75f
     }
-
     val logoHeight = when {
-        isTablet -> 240.dp
-        isPortraitPhone -> 160.dp
-        else -> 140.dp
+        isTablet -> 220.dp
+        isPortraitPhone -> 150.dp
+        else -> 130.dp
     }
-
     val titleFontSize = when {
         isTablet -> 40.sp
-        isPortraitPhone -> 28.sp
+        isPortraitPhone -> 30.sp
         else -> 26.sp
     }
-
     val fieldFontSize = when {
         isTablet -> 18.sp
         else -> 14.sp
     }
-
     val buttonFontSize = when {
         isTablet -> 20.sp
         else -> 16.sp
     }
-
     val spacingLarge = when {
         isTablet -> 32.dp
         isPortraitPhone -> 20.dp
@@ -90,6 +104,7 @@ private fun LoginScreenContent(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -126,6 +141,7 @@ private fun LoginScreenContent(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email", fontSize = fieldFontSize) },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -134,6 +150,7 @@ private fun LoginScreenContent(
                 onValueChange = { password = it },
                 label = { Text("Password", fontSize = fieldFontSize) },
                 visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -141,22 +158,73 @@ private fun LoginScreenContent(
 
             Button(
                 onClick = {
-                    onLogin(email, password) { success, error ->
-                        if (success) onLoginSuccess() else errorMessage = error
+                    if (email.isBlank() || password.isBlank()) {
+                        errorMessage = "Preenche todos os campos"
+                        return@Button
+                    }
+                    isLoading = true
+                    onLogin(email.trim(), password) { success, error ->
+                        isLoading = false
+                        if (success) {
+                            errorMessage = null
+                            onLoginSuccess()
+                        } else {
+                            errorMessage = error ?: "Erro ao iniciar sessão"
+                        }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
             ) {
-                Text("Login", fontSize = buttonFontSize)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(if (isTablet) 28.dp else 20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Iniciar Sessão", fontSize = buttonFontSize)
+                }
             }
 
-            errorMessage?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
+            errorMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = Color.Red, fontSize = 12.sp)
+            }
 
             Spacer(Modifier.height(12.dp))
 
             TextButton(onClick = onRegisterClick) {
-                Text("Ainda não tens conta? Regista-te")
+                Text("Criar conta", fontSize = if (isTablet) 16.sp else 14.sp)
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Login - Phone")
+@Composable
+private fun LoginScreenPreview_Phone() {
+    MaterialTheme {
+        LoginScreenLayout(
+            isTablet = false,
+            isPortraitPhone = true,
+            onLogin = { _, _, cb -> cb(true, null) },
+            onLoginSuccess = {},
+            onRegisterClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Login - Tablet")
+@Composable
+private fun LoginScreenPreview_Tablet() {
+    MaterialTheme {
+        LoginScreenLayout(
+            isTablet = true,
+            isPortraitPhone = false,
+            onLogin = { _, _, cb -> cb(true, null) },
+            onLoginSuccess = {},
+            onRegisterClick = {}
+        )
     }
 }

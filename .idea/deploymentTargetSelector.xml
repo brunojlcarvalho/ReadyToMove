@@ -13,51 +13,19 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="MapScreenPreview">
+      <SelectionState runConfigName="RegisterScreenPreview_Phone">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-15T15:43:16.060497700Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\bc763\.android\avd\Medium_Tablet.avd" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="LoginScreenPreviewFromMainCompact">
+      <SelectionState runConfigName="LeaderboardScreenPreview_Phone">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-13T19:18:19.349244300Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\bc763\.android\avd\Medium_Tablet.avd" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="LoginScreenPreviewFromMainTablet">
+      <SelectionState runConfigName="MapScreenPreview_Phone">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-13T19:19:06.100871500Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\bc763\.android\avd\Medium_Tablet.avd" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="LeaderboardPreview">
+      <SelectionState runConfigName="ProfileScreenPreview_Phone">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-15T15:44:33.892958500Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=362b5d5e" />
-            </handle>
-          </Target>
-        </DropdownSelection>
-        <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="TravelHistoryPreview">
+      <SelectionState runConfigName="TravelHistoryScreenPreview_Phone">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

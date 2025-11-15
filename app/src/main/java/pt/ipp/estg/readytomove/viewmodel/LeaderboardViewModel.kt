@@ -11,7 +11,6 @@ class LeaderboardViewModel : ViewModel() {
     val leaderboard: StateFlow<List<LeaderboardEntry>> = _leaderboard
 
     init {
-        // Mock para teste
         loadMockLeaderboard()
     }
 
