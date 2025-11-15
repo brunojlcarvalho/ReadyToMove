@@ -11,6 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.firebase.FirebaseApp
@@ -53,35 +56,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun MapScreenPreview() {
-    var dark by remember { mutableStateOf(false) }
-    ReadyToMoveTheme(darkTheme = dark) {
-        MapScreen(
-            navController = rememberNavController(),
-            isDarkTheme = dark,
-            onToggleTheme = { dark = it }
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LeaderboardPreview() {
-    ReadyToMoveTheme {
-        LeaderboardScreen(navController = rememberNavController())
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TravelHistoryPreview() {
-    ReadyToMoveTheme {
-        TravelHistoryScreen(navController = rememberNavController())
-    }
-}
-
 
 

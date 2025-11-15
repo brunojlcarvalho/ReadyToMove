@@ -10,6 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,16 +33,68 @@ import pt.ipp.estg.readytomove.data.model.LeaderboardEntry
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LeaderboardScreen(navController: NavHostController) {
+fun LeaderboardScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: LeaderboardViewModel = viewModel()
     val leaderboard by viewModel.leaderboard.collectAsState()
 
+    val widthClass = windowSizeClass.widthSizeClass
+    val heightClass = windowSizeClass.heightSizeClass
+
+    val isTablet = widthClass >= WindowWidthSizeClass.Medium
+    val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact && heightClass == WindowHeightSizeClass.Expanded
+
+    val headerHeight = when {
+        isTablet -> 220.dp
+        isPortraitPhone -> 170.dp
+        else -> 150.dp
+    }
+
+    val podiumCardHeight = when {
+        isTablet -> 200.dp
+        isPortraitPhone -> 160.dp
+        else -> 150.dp
+    }
+
+    val podiumAvatarSize = when {
+        isTablet -> 96.dp
+        isPortraitPhone -> 72.dp
+        else -> 60.dp
+    }
+
+    val avatarSize = when {
+        isTablet -> 72.dp
+        isPortraitPhone -> 60.dp
+        else -> 54.dp
+    }
+
+    val rowCardHeight = when {
+        isTablet -> 110.dp
+        isPortraitPhone -> 96.dp
+        else -> 88.dp
+    }
+
+    val horizontalPadding = when {
+        isTablet -> 32.dp
+        else -> 16.dp
+    }
+
+    val titleScale = when {
+        isTablet -> 1.25f
+        else -> 1f
+    }
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Leaderboard") },
+                title = {
+                    Text(
+                        "Leaderboard",
+                        fontSize = MaterialTheme.typography.headlineMedium.fontSize * titleScale
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -63,14 +118,31 @@ fun LeaderboardScreen(navController: NavHostController) {
                 entries = leaderboard,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(padding),
+                headerHeight = headerHeight,
+                podiumCardHeight = podiumCardHeight,
+                podiumAvatarSize = podiumAvatarSize,
+                avatarSize = avatarSize,
+                rowCardHeight = rowCardHeight,
+                horizontalPadding = horizontalPadding,
+                titleScale = titleScale
             )
         }
     }
 }
 
 @Composable
-private fun LeaderboardContent(entries: List<LeaderboardEntry>, modifier: Modifier = Modifier) {
+private fun LeaderboardContent(
+    entries: List<LeaderboardEntry>,
+    modifier: Modifier = Modifier,
+    headerHeight: Dp,
+    podiumCardHeight: Dp,
+    podiumAvatarSize: Dp,
+    avatarSize: Dp,
+    rowCardHeight: Dp,
+    horizontalPadding: Dp,
+    titleScale: Float
+) {
     val topThree = remember(entries) { entries.take(3) }
     val others = remember(entries) { entries.drop(3) }
 
@@ -79,22 +151,20 @@ private fun LeaderboardContent(entries: List<LeaderboardEntry>, modifier: Modifi
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        item {
-            LeaderboardHeader()
-        }
+        item { LeaderboardHeader(headerHeight = headerHeight, horizontalPadding = horizontalPadding, titleScale = titleScale) }
+
         if (topThree.isNotEmpty()) {
-            item {
-                PodiumSection(entries = topThree)
-            }
+            item { PodiumSection(entries = topThree, podiumCardHeight = podiumCardHeight, podiumAvatarSize = podiumAvatarSize) }
         }
+
         itemsIndexed(others) { _, entry ->
-            LeaderboardRow(entry = entry)
+            LeaderboardRow(entry = entry, modifier = Modifier, cardHeight = rowCardHeight, avatarSize = avatarSize, horizontalPadding = horizontalPadding)
         }
     }
 }
 
 @Composable
-private fun LeaderboardHeader() {
+private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScale: Float) {
     val gradient = Brush.verticalGradient(
         listOf(
             MaterialTheme.colorScheme.primary,
@@ -104,14 +174,14 @@ private fun LeaderboardHeader() {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(170.dp)
+            .height(headerHeight)
             .background(gradient),
         color = Color.Transparent
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = horizontalPadding),
             verticalArrangement = Arrangement.Center
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -120,7 +190,7 @@ private fun LeaderboardHeader() {
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(48.dp * titleScale)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f))
                         .padding(8.dp)
@@ -130,12 +200,14 @@ private fun LeaderboardHeader() {
                     Text(
                         "Classificação Geral",
                         style = MaterialTheme.typography.headlineSmall,
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize * titleScale,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Text(
                         "Top utilizadores por pontos e viagens",
                         style = MaterialTheme.typography.bodyMedium,
+                        fontSize = MaterialTheme.typography.bodyMedium.fontSize * titleScale,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                     )
                 }
@@ -145,7 +217,7 @@ private fun LeaderboardHeader() {
 }
 
 @Composable
-private fun PodiumSection(entries: List<LeaderboardEntry>) {
+private fun PodiumSection(entries: List<LeaderboardEntry>, podiumCardHeight: Dp, podiumAvatarSize: Dp) {
     val ordered = entries.sortedBy { it.position }
     Row(
         modifier = Modifier
@@ -158,9 +230,9 @@ private fun PodiumSection(entries: List<LeaderboardEntry>) {
         val first = ordered.getOrNull(0)
         val third = ordered.getOrNull(2)
 
-        PodiumCard(entry = second, height = 160.dp, accent = Color(0xFFB0BEC5))
-        PodiumCard(entry = first, height = 160.dp, accent = Color(0xFFFFD700))
-        PodiumCard(entry = third, height = 160.dp, accent = Color(0xFFCD7F32))
+        PodiumCard(entry = second, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFB0BEC5))
+        PodiumCard(entry = first, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFFFD700))
+        PodiumCard(entry = third, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFCD7F32))
     }
 }
 
@@ -168,6 +240,7 @@ private fun PodiumSection(entries: List<LeaderboardEntry>) {
 private fun RowScope.PodiumCard(
     entry: LeaderboardEntry?,
     height: Dp,
+    avatarSize: Dp,
     accent: Color
 ) {
     val baseModifier = Modifier
@@ -199,13 +272,13 @@ private fun RowScope.PodiumCard(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(avatarSize)
                         .clip(CircleShape)
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(avatarSize)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
@@ -221,7 +294,6 @@ private fun RowScope.PodiumCard(
             Text(
                 entry.name,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -235,26 +307,12 @@ private fun RowScope.PodiumCard(
 }
 
 @Composable
-private fun Medal(position: Int) {
-    val (emoji, tint) = when (position) {
-        1 -> "🥇" to Color(0xFFFFD700)
-        2 -> "🥈" to Color(0xFFC0C0C0)
-        3 -> "🥉" to Color(0xFFCD7F32)
-        else -> "⭐" to MaterialTheme.colorScheme.primary
-    }
-    Text(
-        text = emoji,
-        style = MaterialTheme.typography.titleLarge
-    )
-}
-
-@Composable
-private fun LeaderboardRow(entry: LeaderboardEntry) {
+private fun LeaderboardRow(entry: LeaderboardEntry, modifier: Modifier = Modifier, cardHeight: Dp, avatarSize: Dp, horizontalPadding: Dp) {
     ElevatedCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(88.dp)
-            .padding(horizontal = 16.dp),
+            .height(cardHeight)
+            .padding(horizontal = horizontalPadding),
         shape = RoundedCornerShape(18.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
     ) {
@@ -272,13 +330,13 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
                     contentDescription = "Avatar",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(avatarSize)
                         .clip(CircleShape)
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(avatarSize)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
@@ -316,6 +374,20 @@ private fun LeaderboardRow(entry: LeaderboardEntry) {
 }
 
 @Composable
+private fun Medal(position: Int) {
+    val (emoji, tint) = when (position) {
+        1 -> "🥇" to Color(0xFFFFD700)
+        2 -> "🥈" to Color(0xFFC0C0C0)
+        3 -> "🥉" to Color(0xFFCD7F32)
+        else -> "⭐" to MaterialTheme.colorScheme.primary
+    }
+    Text(
+        text = emoji,
+        style = MaterialTheme.typography.titleLarge
+    )
+}
+
+@Composable
 private fun RankBadge(position: Int) {
     val bg = when (position) {
         1 -> Color(0xFFFFD700)
@@ -333,8 +405,7 @@ private fun RankBadge(position: Int) {
         Text(
             "#$position",
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (position <= 3) Color.Black else MaterialTheme.colorScheme.onPrimaryContainer
+            fontWeight = FontWeight.Bold
         )
     }
 }

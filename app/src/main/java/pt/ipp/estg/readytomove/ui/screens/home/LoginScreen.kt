@@ -1,6 +1,5 @@
 package pt.ipp.estg.readytomove.ui.screens.home
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.unit.sp
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
@@ -28,11 +26,32 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
+    LoginScreenContent(
+        windowSizeClass = windowSizeClass,
+        onLogin = { email, password, callback ->
+            viewModel.loginUser(email, password) { success, error ->
+                callback(success, error)
+            }
+        },
+        onLoginSuccess = onLoginSuccess,
+        onRegisterClick = onRegisterClick
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LoginScreenContent(
+    windowSizeClass: WindowSizeClass,
+    onLogin: (String, String, (Boolean, String?) -> Unit) -> Unit,
+    onLoginSuccess: () -> Unit,
+    onRegisterClick: () -> Unit
+) {
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
-    val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact && heightClass == WindowHeightSizeClass.Expanded
+    val isPortraitPhone =
+        widthClass == WindowWidthSizeClass.Compact && heightClass == WindowHeightSizeClass.Expanded
 
     val contentWidthFraction = when {
         isTablet -> 0.5f
@@ -68,6 +87,10 @@ fun LoginScreen(
         else -> 16.dp
     }
 
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,70 +118,45 @@ fun LoginScreen(
 
         Spacer(Modifier.height(spacingLarge))
 
-        LoginForm(
+        Column(
             modifier = Modifier.fillMaxWidth(contentWidthFraction),
-            fieldFontSize = fieldFontSize,
-            buttonFontSize = buttonFontSize,
-            onLogin = { email, password, callback ->
-                viewModel.loginUser(email, password) { success, error ->
-                    callback(success, error)
-                }
-            },
-            onLoginSuccess = onLoginSuccess,
-            onRegisterClick = onRegisterClick
-        )
-    }
-}
-
-@Composable
-private fun LoginForm(
-    modifier: Modifier,
-    fieldFontSize: androidx.compose.ui.unit.TextUnit,
-    buttonFontSize: androidx.compose.ui.unit.TextUnit,
-    onLogin: (String, String, (Boolean, String?) -> Unit) -> Unit,
-    onLoginSuccess: () -> Unit,
-    onRegisterClick: () -> Unit
-) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email", fontSize = fieldFontSize) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password", fontSize = fieldFontSize) },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                onLogin(email, password) { success, error ->
-                    if (success) onLoginSuccess() else errorMessage = error
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Login", fontSize = buttonFontSize)
-        }
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email", fontSize = fieldFontSize) },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        errorMessage?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password", fontSize = fieldFontSize) },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onRegisterClick) {
-            Text("Ainda não tens conta? Regista-te")
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    onLogin(email, password) { success, error ->
+                        if (success) onLoginSuccess() else errorMessage = error
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Login", fontSize = buttonFontSize)
+            }
+
+            errorMessage?.let { Text(it, color = Color.Red, fontSize = 12.sp) }
+
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(onClick = onRegisterClick) {
+                Text("Ainda não tens conta? Regista-te")
+            }
         }
     }
 }
-
-

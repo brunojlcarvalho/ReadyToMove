@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -28,26 +27,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
-import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
+import androidx.compose.ui.unit.Dp
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavHostController) {
+fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: ProfileViewModel = viewModel()
     val user by viewModel.user.collectAsState()
 
@@ -78,6 +77,7 @@ fun ProfileScreen(navController: NavHostController) {
         }
     } else {
         ProfileScreenScaffold(
+            windowSizeClass = windowSizeClass,
             userName = user!!.name,
             userEmail = user!!.email,
             avatarUrl = user!!.avatarUrl,
@@ -98,6 +98,7 @@ fun ProfileScreen(navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 private fun ProfileScreenScaffold(
+    windowSizeClass: WindowSizeClass,
     userName: String,
     userEmail: String,
     avatarUrl: String?,
@@ -107,6 +108,49 @@ private fun ProfileScreenScaffold(
     onUpdateName: (String) -> Unit,
     onLogout: () -> Unit
 ) {
+    val widthClass = windowSizeClass.widthSizeClass
+    val heightClass = windowSizeClass.heightSizeClass
+
+    val isTablet = widthClass >= WindowWidthSizeClass.Medium
+    val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
+            heightClass == WindowHeightSizeClass.Expanded
+
+    val headerHeight = when {
+        isTablet -> 340.dp
+        isPortraitPhone -> 300.dp
+        else -> 280.dp
+    }
+    val avatarSize = when {
+        isTablet -> 160.dp
+        isPortraitPhone -> 140.dp
+        else -> 120.dp
+    }
+    val nameFontSize = when {
+        isTablet -> 48.sp
+        isPortraitPhone -> 36.sp
+        else -> 28.sp
+    }
+    val emailFontSize = when {
+        isTablet -> 18.sp
+        isPortraitPhone -> 16.sp
+        else -> 14.sp
+    }
+    val statCardHeight = when {
+        isTablet -> 140.dp
+        isPortraitPhone -> 120.dp
+        else -> 110.dp
+    }
+    val pagePadding = when {
+        isTablet -> 32.dp
+        isPortraitPhone -> 20.dp
+        else -> 16.dp
+    }
+    val sectionSpacing = when {
+        isTablet -> 20.dp
+        isPortraitPhone -> 18.dp
+        else -> 16.dp
+    }
+
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var tempName by rememberSaveable { mutableStateOf("") }
 
@@ -130,8 +174,9 @@ private fun ProfileScreenScaffold(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(padding)
+                .padding(horizontal = pagePadding),
+            verticalArrangement = Arrangement.spacedBy(sectionSpacing),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             item {
@@ -154,25 +199,51 @@ private fun ProfileScreenScaffold(
                         if (tempName.isNotBlank()) onUpdateName(tempName.trim())
                         isEditing = false
                         focus.clearFocus()
+                    },
+                    headerHeight = headerHeight,
+                    avatarSize = avatarSize,
+                    nameFontSize = nameFontSize,
+                    emailFontSize = emailFontSize,
+                    isTablet = isTablet
+                )
+            }
+
+            item {
+                if (isTablet) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        ProfileStatsSection(
+                            points = points,
+                            trips = totalTrips,
+                            modifier = Modifier.weight(1f),
+                            cardHeight = statCardHeight
+                        )
+                        ProfileInfoCard(
+                            title = "Informações",
+                            rows = listOf(
+                                InfoRowData("E-mail", userEmail),
+                                InfoRowData("Nível", "Nível ${(points / 500) + 1}")
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                )
-            }
-
-            item {
-                ProfileStatsSection(
-                    points = points,
-                    trips = totalTrips
-                )
-            }
-
-            item {
-                ProfileInfoCard(
-                    title = "Informações",
-                    rows = listOf(
-                        InfoRowData("E-mail", userEmail),
-                        InfoRowData("Nível", "Nível ${(points / 500) + 1}")
+                } else {
+                    ProfileStatsSection(
+                        points = points,
+                        trips = totalTrips,
+                        modifier = Modifier.fillMaxWidth(),
+                        cardHeight = statCardHeight
                     )
-                )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    ProfileInfoCard(
+                        title = "Informações",
+                        rows = listOf(
+                            InfoRowData("E-mail", userEmail),
+                            InfoRowData("Nível", "Nível ${(points / 500) + 1}")
+                        )
+                    )
+                }
             }
 
             item {
@@ -180,7 +251,7 @@ private fun ProfileScreenScaffold(
                     onClick = onLogout,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = if (isTablet) 64.dp else 0.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -190,12 +261,13 @@ private fun ProfileScreenScaffold(
                 ) {
                     Icon(Icons.Default.ExitToApp, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Terminar sessão")
+                    Text("Terminar sessão", fontSize = if (isTablet) 18.sp else 14.sp)
                 }
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -208,7 +280,12 @@ private fun ProfileHeader(
     onTempChange: (String) -> Unit,
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
-    onSaveEdit: () -> Unit
+    onSaveEdit: () -> Unit,
+    headerHeight: Dp,
+    avatarSize: Dp,
+    nameFontSize: androidx.compose.ui.unit.TextUnit,
+    emailFontSize: androidx.compose.ui.unit.TextUnit,
+    isTablet: Boolean
 ) {
     val gradient = Brush.verticalGradient(
         colors = listOf(
@@ -220,26 +297,24 @@ private fun ProfileHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp)
+            .height(headerHeight)
             .padding(horizontal = 0.dp)
             .background(gradient)
     ) {
-        // Avatar + info
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = if (isTablet) 40.dp else 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Avatar com anel e leve sombra
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(avatarSize)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.08f))
                     .border(
-                        width = 3.dp,
+                        width = (if (isTablet) 4.dp else 3.dp),
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
                         shape = CircleShape
                     ),
@@ -251,13 +326,13 @@ private fun ProfileHeader(
                         contentDescription = "Avatar",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(114.dp)
+                            .size(avatarSize - 8.dp)
                             .clip(CircleShape)
                     )
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(114.dp)
+                            .size(avatarSize - 8.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
@@ -265,14 +340,14 @@ private fun ProfileHeader(
                         Text(
                             text = name.firstOrNull()?.uppercase() ?: "?",
                             color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 42.sp,
+                            fontSize = if (isTablet) 56.sp else 42.sp,
                             fontWeight = FontWeight.Black
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(if (isTablet) 18.dp else 14.dp))
 
             AnimatedContent(
                 targetState = isEditing,
@@ -291,7 +366,7 @@ private fun ProfileHeader(
                             value = tempName,
                             onValueChange = onTempChange,
                             singleLine = true,
-                            modifier = Modifier.widthIn(max = 280.dp),
+                            modifier = Modifier.widthIn(max = if (isTablet) 420.dp else 280.dp),
                             shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { onSaveEdit() }),
@@ -309,11 +384,12 @@ private fun ProfileHeader(
                             text = name,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = nameFontSize
                         )
                         IconButton(
                             onClick = onStartEdit,
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(if (isTablet) 32.dp else 28.dp),
                             colors = IconButtonDefaults.iconButtonColors(
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             )
@@ -327,7 +403,8 @@ private fun ProfileHeader(
             Text(
                 email,
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = emailFontSize
             )
         }
     }
@@ -336,25 +413,29 @@ private fun ProfileHeader(
 @Composable
 private fun ProfileStatsSection(
     points: Int,
-    trips: Int
+    trips: Int,
+    modifier: Modifier = Modifier,
+    cardHeight: Dp
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 0.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         StatCard(
             title = "Pontos",
             value = points.toString(),
             icon = Icons.Default.Star,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            cardHeight = cardHeight
         )
         StatCard(
             title = "Viagens",
             value = trips.toString(),
             icon = Icons.Default.History,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            cardHeight = cardHeight
         )
     }
 }
@@ -364,12 +445,13 @@ data class InfoRowData(val label: String, val value: String)
 @Composable
 private fun ProfileInfoCard(
     title: String,
-    rows: List<InfoRowData>
+    rows: List<InfoRowData>,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 0.dp),
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 2.dp
     ) {
@@ -409,10 +491,11 @@ fun StatCard(
     title: String,
     value: String,
     icon: ImageVector? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    cardHeight: Dp
 ) {
     ElevatedCard(
-        modifier = modifier.height(110.dp),
+        modifier = modifier.height(cardHeight),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)
     ) {
@@ -446,19 +529,3 @@ fun StatCard(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun ProfileScreenPreview() {
-    ReadyToMoveTheme {
-        ProfileScreenScaffold(
-            userName = "Maria Silva",
-            userEmail = "maria@example.com",
-            avatarUrl = null,
-            points = 1200,
-            totalTrips = 42,
-            onBack = {},
-            onUpdateName = {},
-            onLogout = {}
-        )
-    }
-}
