@@ -47,6 +47,8 @@ import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.unit.DpSize
+import kotlin.text.compareTo
+import kotlin.unaryMinus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,13 +114,12 @@ private fun ProfileScreenScaffold(
     onUpdateName: (String) -> Unit,
     onLogout: () -> Unit
 ) {
+    // (mantém cálculos anteriores: widthClass, isTablet, pagePadding, etc.)
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
-
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
             heightClass == WindowHeightSizeClass.Expanded
-
     val headerHeight = when {
         isTablet -> 340.dp
         isPortraitPhone -> 300.dp
@@ -157,7 +158,6 @@ private fun ProfileScreenScaffold(
 
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var tempName by rememberSaveable { mutableStateOf("") }
-
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val focus = LocalFocusManager.current
 
@@ -175,55 +175,78 @@ private fun ProfileScreenScaffold(
             )
         }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = pagePadding),
-            verticalArrangement = Arrangement.spacedBy(sectionSpacing),
-            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            item {
-                ProfileHeader(
-                    name = userName,
-                    email = userEmail,
-                    avatarUrl = avatarUrl,
-                    isEditing = isEditing,
-                    tempName = tempName,
-                    onTempChange = { tempName = it },
-                    onStartEdit = {
-                        tempName = userName
-                        isEditing = true
-                    },
-                    onCancelEdit = {
-                        isEditing = false
-                        focus.clearFocus()
-                    },
-                    onSaveEdit = {
-                        if (tempName.isNotBlank()) onUpdateName(tempName.trim())
-                        isEditing = false
-                        focus.clearFocus()
-                    },
-                    headerHeight = headerHeight,
-                    avatarSize = avatarSize,
-                    nameFontSize = nameFontSize,
-                    emailFontSize = emailFontSize,
-                    isTablet = isTablet
-                )
-            }
+            // Header full-width (sem padding horizontal externo)
+            ProfileHeader(
+                name = userName,
+                email = userEmail,
+                avatarUrl = avatarUrl,
+                isEditing = isEditing,
+                tempName = tempName,
+                onTempChange = { tempName = it },
+                onStartEdit = {
+                    tempName = userName
+                    isEditing = true
+                },
+                onCancelEdit = {
+                    isEditing = false
+                    focus.clearFocus()
+                },
+                onSaveEdit = {
+                    if (tempName.isNotBlank()) onUpdateName(tempName.trim())
+                    isEditing = false
+                    focus.clearFocus()
+                },
+                headerHeight = headerHeight,
+                avatarSize = avatarSize,
+                nameFontSize = nameFontSize,
+                emailFontSize = emailFontSize,
+                isTablet = isTablet
+            )
 
-            item {
-                if (isTablet) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
+            // Conteúdo scrollável com padding lateral
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = pagePadding),
+                verticalArrangement = Arrangement.spacedBy(sectionSpacing),
+                contentPadding = PaddingValues(top = sectionSpacing, bottom = 24.dp)
+            ) {
+                item {
+                    if (isTablet) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            ProfileStatsSection(
+                                points = points,
+                                trips = totalTrips,
+                                modifier = Modifier.weight(1f),
+                                cardHeight = statCardHeight
+                            )
+                            ProfileInfoCard(
+                                title = "Informações",
+                                rows = listOf(
+                                    InfoRowData("Nome", userName),
+                                    InfoRowData("Email", userEmail),
+                                    InfoRowData("Viagens", totalTrips.toString()),
+                                    InfoRowData("Pontos", points.toString())
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    } else {
                         ProfileStatsSection(
                             points = points,
                             trips = totalTrips,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             cardHeight = statCardHeight
                         )
+                        Spacer(Modifier.height(12.dp))
                         ProfileInfoCard(
                             title = "Informações",
                             rows = listOf(
@@ -231,46 +254,27 @@ private fun ProfileScreenScaffold(
                                 InfoRowData("Email", userEmail),
                                 InfoRowData("Viagens", totalTrips.toString()),
                                 InfoRowData("Pontos", points.toString())
-                            ),
-                            modifier = Modifier.weight(1f)
+                            )
                         )
                     }
-                } else {
-                    ProfileStatsSection(
-                        points = points,
-                        trips = totalTrips,
-                        modifier = Modifier.fillMaxWidth(),
-                        cardHeight = statCardHeight
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    ProfileInfoCard(
-                        title = "Informações",
-                        rows = listOf(
-                            InfoRowData("Nome", userName),
-                            InfoRowData("Email", userEmail),
-                            InfoRowData("Viagens", totalTrips.toString()),
-                            InfoRowData("Pontos", points.toString())
-                        )
-                    )
                 }
-            }
-
-            item {
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = if (isTablet) 64.dp else 0.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    contentPadding = PaddingValues(vertical = 14.dp)
-                ) {
-                    Icon(Icons.Default.ExitToApp, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Terminar sessão", fontSize = if (isTablet) 18.sp else 14.sp)
+                item {
+                    Button(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = if (isTablet) 64.dp else 0.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        contentPadding = PaddingValues(vertical = 14.dp)
+                    ) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Terminar sessão", fontSize = if (isTablet) 18.sp else 14.sp)
+                    }
                 }
             }
         }
