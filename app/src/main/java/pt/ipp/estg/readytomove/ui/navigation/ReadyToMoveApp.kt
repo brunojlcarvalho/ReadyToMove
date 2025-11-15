@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
@@ -17,7 +16,8 @@ import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 @Composable
 fun ReadyToMoveApp(
     isDarkTheme: Boolean,
-    onToggleTheme: (Boolean) -> Unit
+    onToggleTheme: (Boolean) -> Unit,
+    windowSizeClass: WindowSizeClass
 ) {
     val navController = rememberNavController()
 
@@ -33,19 +33,21 @@ fun ReadyToMoveApp(
         composable("register") {
             RegisterScreen(
                 viewModel = viewModel(),
+                windowSizeClass = windowSizeClass,
                 onRegisterSuccess = { navController.navigate("map") },
                 onLoginClick = { navController.navigate("login") }
             )
         }
         composable("map") {
             MapScreen(
+                windowSizeClass = windowSizeClass,
                 navController = navController,
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme
             )
         }
-        composable("profile") { ProfileScreen(navController) }
-        composable("leaderboard") { LeaderboardScreen(navController) }
-        composable("travel_history") { TravelHistoryScreen(navController) }
+        composable("profile") { ProfileScreen(navController, windowSizeClass) }
+        composable("leaderboard") { LeaderboardScreen(navController, windowSizeClass) }
+        composable("travel_history") { TravelHistoryScreen(navController, windowSizeClass) }
     }
 }

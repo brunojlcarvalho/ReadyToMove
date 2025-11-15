@@ -4,37 +4,49 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
-import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
-import pt.ipp.estg.readytomove.viewmodel.MapViewModel
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.ui.theme.Theme
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
+import pt.ipp.estg.readytomove.viewmodel.MapViewModel
 
 enum class TripState { IDLE, RUNNING, PAUSED }
 
@@ -43,8 +55,53 @@ enum class TripState { IDLE, RUNNING, PAUSED }
 fun MapScreen(
     navController: NavHostController,
     isDarkTheme: Boolean,
-    onToggleTheme: (Boolean) -> Unit
+    onToggleTheme: (Boolean) -> Unit,
+    windowSizeClass: WindowSizeClass
 ) {
+    val width = windowSizeClass.widthSizeClass
+    val height = windowSizeClass.heightSizeClass
+
+    val isTablet = width >= WindowWidthSizeClass.Medium
+    val isPortraitPhone = width == WindowWidthSizeClass.Compact &&
+            height == WindowHeightSizeClass.Expanded
+
+    val topBarIconSize = when {
+        isTablet -> 36.dp
+        isPortraitPhone -> 30.dp
+        else -> 26.dp
+    }
+
+    val drawerWidth = when {
+        isTablet -> 380.dp
+        else -> 300.dp
+    }
+
+    val drawerHeaderHeight = when {
+        isTablet -> 220.dp
+        else -> 170.dp
+    }
+
+    val drawerIconSize = when {
+        isTablet -> 72.dp
+        else -> 64.dp
+    }
+
+    val bottomButtonHeight = when {
+        isTablet -> 64.dp
+        else -> 52.dp
+    }
+
+    val bottomPadding = when {
+        isTablet -> 42.dp
+        isPortraitPhone -> 32.dp
+        else -> 24.dp
+    }
+
+    val mapButtonFontSize = when {
+        isTablet -> 18.sp
+        else -> 16.sp
+    }
+
     val context = LocalContext.current
     val viewModel: MapViewModel = viewModel()
     val scope = rememberCoroutineScope()
@@ -83,7 +140,11 @@ fun MapScreen(
         mutableStateOf(
             MapProperties(
                 isMyLocationEnabled = hasPermission,
-                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style)
+                mapStyleOptions = try {
+                    MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style)
+                } catch (e: Exception) {
+                    null
+                }
             )
         )
     }
@@ -107,25 +168,32 @@ fun MapScreen(
                         navController.navigate(route)
                     }
                 },
-                onClose = { scope.launch { drawerState.close() } }
+                onClose = { scope.launch { drawerState.close() } },
+                drawerWidth = drawerWidth,
+                drawerHeaderHeight = drawerHeaderHeight,
+                drawerIconSize = drawerIconSize
             )
         }
     ) {
+        val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                                }
                             }
-                        }) {
+                        ) {
                             Icon(
                                 Icons.Default.Menu,
                                 contentDescription = "Menu",
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(topBarIconSize)
                             )
                         }
                     }
@@ -176,25 +244,49 @@ fun MapScreen(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(padding)
-                        .padding(bottom = 24.dp),
+                        .padding(bottom = bottomPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (tripState) {
                         TripState.IDLE -> {
-                            Button(onClick = { tripState = TripState.RUNNING }) {
-                                Text("Iniciar Viagem")
+                            Button(
+                                onClick = { tripState = TripState.RUNNING },
+                                modifier = Modifier
+                                    .height(bottomButtonHeight)
+                            ) {
+                                Text("Iniciar Viagem", fontSize = mapButtonFontSize)
                             }
                         }
                         TripState.RUNNING -> {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(onClick = { tripState = TripState.PAUSED }) { Text("Pausar") }
-                                Button(onClick = { tripState = TripState.IDLE }) { Text("Parar") }
+                                Button(
+                                    onClick = { tripState = TripState.PAUSED },
+                                    modifier = Modifier.height(bottomButtonHeight)
+                                ) {
+                                    Text("Pausar", fontSize = mapButtonFontSize)
+                                }
+                                Button(
+                                    onClick = { tripState = TripState.IDLE },
+                                    modifier = Modifier.height(bottomButtonHeight)
+                                ) {
+                                    Text("Parar", fontSize = mapButtonFontSize)
+                                }
                             }
                         }
                         TripState.PAUSED -> {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(onClick = { tripState = TripState.RUNNING }) { Text("Retomar") }
-                                Button(onClick = { tripState = TripState.IDLE }) { Text("Parar") }
+                                Button(
+                                    onClick = { tripState = TripState.RUNNING },
+                                    modifier = Modifier.height(bottomButtonHeight)
+                                ) {
+                                    Text("Retomar", fontSize = mapButtonFontSize)
+                                }
+                                Button(
+                                    onClick = { tripState = TripState.IDLE },
+                                    modifier = Modifier.height(bottomButtonHeight)
+                                ) {
+                                    Text("Parar", fontSize = mapButtonFontSize)
+                                }
                             }
                         }
                     }
@@ -209,13 +301,16 @@ private fun AppDrawer(
     isDarkTheme: Boolean,
     onToggleTheme: (Boolean) -> Unit,
     onNavigate: (String) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    drawerWidth: Dp,
+    drawerHeaderHeight: Dp,
+    drawerIconSize: Dp
 ) {
-    ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
+    ModalDrawerSheet(modifier = Modifier.width(drawerWidth)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(170.dp)
+                .height(drawerHeaderHeight)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -235,27 +330,57 @@ private fun AppDrawer(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(drawerIconSize)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f))
                         .padding(8.dp)
                 )
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("ReadyToMove", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimary)
-                    Text("Explora a cidade", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f))
+                    Text(
+                        "ReadyToMove",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        "Explora a cidade",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
                 }
             }
+
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd)) {
                 Icon(Icons.Default.Close, contentDescription = "Fechar", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
 
         Spacer(Modifier.height(8.dp))
-        NavigationDrawerItem(label = { Text("Mapa") }, selected = false, onClick = { onNavigate("map") }, icon = { Icon(Icons.Default.MyLocation, contentDescription = null) })
-        NavigationDrawerItem(label = { Text("Perfil") }, selected = false, onClick = { onNavigate("profile") }, icon = { Icon(Icons.Default.Person, contentDescription = null) })
-        NavigationDrawerItem(label = { Text("Leaderboard") }, selected = false, onClick = { onNavigate("leaderboard") }, icon = { Icon(Icons.Default.EmojiEvents, contentDescription = null) })
-        NavigationDrawerItem(label = { Text("Histórico de Viagens") }, selected = false, onClick = { onNavigate("travel_history") }, icon = { Icon(Icons.Default.History, contentDescription = null) })
+
+        NavigationDrawerItem(
+            label = { Text("Mapa") },
+            selected = false,
+            onClick = { onNavigate("map") },
+            icon = { Icon(Icons.Default.MyLocation, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Perfil") },
+            selected = false,
+            onClick = { onNavigate("profile") },
+            icon = { Icon(Icons.Default.Person, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Leaderboard") },
+            selected = false,
+            onClick = { onNavigate("leaderboard") },
+            icon = { Icon(Icons.Default.EmojiEvents, contentDescription = null) }
+        )
+        NavigationDrawerItem(
+            label = { Text("Histórico de Viagens") },
+            selected = false,
+            onClick = { onNavigate("travel_history") },
+            icon = { Icon(Icons.Default.History, contentDescription = null) }
+        )
 
         Spacer(Modifier.height(12.dp))
         Spacer(Modifier.height(12.dp))
@@ -263,9 +388,8 @@ private fun AppDrawer(
 
         ThemeToggle(
             isDark = isDarkTheme,
-            onToggle = { onToggleTheme(it) },
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+            onToggle = onToggleTheme,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
     }
 }
@@ -336,5 +460,61 @@ private fun ThemeToggle(
                 modifier = Modifier.size(16.dp)
             )
         }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+private fun fakeWindowSizeClass(
+    width: WindowWidthSizeClass,
+    height: WindowHeightSizeClass
+): WindowSizeClass {
+    val w = when (width) {
+        WindowWidthSizeClass.Compact -> 360.dp
+        WindowWidthSizeClass.Medium -> 800.dp
+        WindowWidthSizeClass.Expanded -> 1200.dp
+        else -> 360.dp
+    }
+    val h = when (height) {
+        WindowHeightSizeClass.Compact -> 360.dp
+        WindowHeightSizeClass.Medium -> 640.dp
+        WindowHeightSizeClass.Expanded -> 900.dp
+        else -> 640.dp
+    }
+    return WindowSizeClass.calculateFromSize(DpSize(w, h))
+}
+
+@Preview(showBackground = true, name = "Map - Phone")
+@Composable
+private fun MapScreenPreview_Phone() {
+    var dark by remember { mutableStateOf(false) }
+    MaterialTheme {
+        val nav = rememberNavController()
+        MapScreen(
+            navController = nav,
+            isDarkTheme = dark,
+            onToggleTheme = { dark = it },
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Compact,
+                WindowHeightSizeClass.Medium
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Map - Tablet")
+@Composable
+private fun MapScreenPreview_Tablet() {
+    var dark by remember { mutableStateOf(true) }
+    MaterialTheme {
+        val nav = rememberNavController()
+        MapScreen(
+            navController = nav,
+            isDarkTheme = dark,
+            onToggleTheme = { dark = it },
+            windowSizeClass = fakeWindowSizeClass(
+                WindowWidthSizeClass.Medium,
+                WindowHeightSizeClass.Medium
+            )
+        )
     }
 }

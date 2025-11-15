@@ -16,7 +16,7 @@ class GeoApifyRepository(private val dataSource: GeoApifyDataSource) {
                 val geoapifyResponse = response.body()
                 geoapifyResponse?.let { mapToOperatorPoints(it, OperatorType.BUS, "Paragem de autocarro") } ?: emptyList()
             } else {
-                Log.e("GeoApifyRepository", "Erro na API ao buscar paragens: ${response.code()} - ${response.message()}")
+                Log.e("GeoApifyRepository", "Erro na API ao procurar paragens: ${response.code()} - ${response.message()}")
                 emptyList()
             }
         } catch (e: Exception) {
@@ -32,11 +32,11 @@ class GeoApifyRepository(private val dataSource: GeoApifyDataSource) {
                 val geoapifyResponse = response.body()
                 geoapifyResponse?.let { mapToOperatorPoints(it, OperatorType.BIKE, "Estação de bicicletas") } ?: emptyList()
             } else {
-                Log.e("GeoApifyRepository", "Erro na API ao buscar bicicletas: ${response.code()} - ${response.message()}")
+                Log.e("GeoApifyRepository", "Erro na API ao procurar bicicletas: ${response.code()} - ${response.message()}")
                 emptyList()
             }
         } catch (e: Exception) {
-            Log.e("GeoApifyRepository", "Exceção ao buscar bicicletas: ${e.message}", e)
+            Log.e("GeoApifyRepository", "Exceção ao procurar bicicletas: ${e.message}", e)
             emptyList()
         }
     }
