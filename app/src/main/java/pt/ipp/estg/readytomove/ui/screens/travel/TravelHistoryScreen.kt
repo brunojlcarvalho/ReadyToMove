@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,6 +40,10 @@ import androidx.compose.ui.unit.DpSize
 fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: TravelHistoryViewModel = viewModel()
     val trips by viewModel.trips.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadUserTrips()
+    }
 
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
@@ -90,7 +96,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                     .padding(horizontal = pagePadding)
             )
         } else {
-            val totalKm = trips.sumOf { it.distanceKm.toDouble() }
+            val totalKm = trips.sumOf { it.distanceKm }
             val totalPoints = trips.sumOf { it.points }
             val totalTrips = trips.size
             val listState = rememberLazyListState()
@@ -117,7 +123,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                         date = trip.date,
                         distanceKm = trip.distanceKm,
                         points = trip.points,
-                        id = trip.id,
+                        duration = trip.duration, // Passar duração
                         isTablet = isTablet
                     )
                 }
@@ -299,7 +305,7 @@ private fun TripCard(
     date: String,
     distanceKm: Double,
     points: Int,
-    id: String,
+    duration: String,
     isTablet: Boolean
 ) {
     ElevatedCard(
@@ -326,15 +332,38 @@ private fun TripCard(
                     fontSize = if (isTablet) 18.sp else 16.sp
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    String.format("%.2f km", distanceKm),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        String.format("%.2f km", distanceKm),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Separador
+                    Text(
+                        " • ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Ícone e Duração
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        duration,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 PointsPill(points = points, isTablet = isTablet)
                 Spacer(Modifier.height(6.dp))
+                // Opcional: Podes remover o "Detalhes" se não tiveres ecrã de detalhes
+                // ou mantê-lo como está.
                 Text(
                     "Detalhes",
                     style = MaterialTheme.typography.bodyMedium,
@@ -402,7 +431,6 @@ private fun EmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-/* ------- Adições mínimas para Preview ------- */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(
@@ -429,6 +457,8 @@ private fun fakeWindowSizeClass(
 private fun TravelHistoryScreenPreview_Phone() {
     val nav = rememberNavController()
     MaterialTheme {
+        // Nota: O preview pode não funcionar perfeito sem o ViewModel injetado,
+        // mas para UI testing funciona se isolares o conteúdo.
         TravelHistoryScreen(
             navController = nav,
             windowSizeClass = fakeWindowSizeClass(
