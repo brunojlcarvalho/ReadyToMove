@@ -24,8 +24,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +47,9 @@ import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.ui.theme.Theme
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
+import androidx.compose.ui.graphics.Color
+import com.google.maps.android.compose.Circle
+import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVectorOriginal
 
 enum class TripState { IDLE, RUNNING, PAUSED }
 
@@ -110,6 +113,11 @@ fun MapScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var tripState by remember { mutableStateOf(TripState.IDLE) }
 
+    val location by viewModel.currentLocation.collectAsState()
+    val operatorPoints by viewModel.operatorPoints.collectAsState()
+    // Observe the route points to draw the line
+    val routePoints by viewModel.routePoints.collectAsState()
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -132,9 +140,6 @@ fun MapScreen(
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
-
-    val location by viewModel.currentLocation.collectAsState()
-    val operatorPoints by viewModel.operatorPoints.collectAsState()
 
     val mapProperties = remember {
         mutableStateOf(
@@ -210,14 +215,38 @@ fun MapScreen(
                     uiSettings = mapUiSettings.value,
                     cameraPositionState = cameraPositionState
                 ) {
+                    // 1. Draw the user route (Polyline)
+                    if (routePoints.isNotEmpty()) {
+                        Polyline(
+                            points = routePoints,
+                            color = Color.Blue,
+                            width = 10f
+                        )
+                    }
+
+                    // 2. User Marker and Camera Follow Logic
                     location?.let {
                         val userLatLng = LatLng(it.latitude, it.longitude)
-                        Marker(state = MarkerState(position = userLatLng), title = "Tu estás aqui")
+
+                        Marker(
+                            state = MarkerState(position = userLatLng),
+                            title = "Eu",
+                            // Sets the center of the image as the anchor point (0.5, 0.5)
+                            // Default is (0.5, 1.0) which is bottom-center (for pins)
+                            anchor = Offset(0.5f, 0.5f),
+                            // Load the custom drawable we created
+                            icon = bitmapDescriptorFromVectorOriginal(context, R.drawable.ic_user_puck),
+                            // Ensure it's drawn above other markers
+                            zIndex = 1.0f
+                        )
+
                         LaunchedEffect(it) {
-                            cameraPositionState.animate(
-                                update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f),
-                                durationMs = 800
-                            )
+                            if (tripState == TripState.RUNNING) {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLng(userLatLng),
+                                    durationMs = 500
+                                )
+                            }
                         }
                     }
                     operatorPoints.forEachIndexed { i, op ->
@@ -247,48 +276,51 @@ fun MapScreen(
                         .padding(bottom = bottomPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    when (tripState) {
-                        TripState.IDLE -> {
-                            Button(
-                                onClick = { tripState = TripState.RUNNING },
-                                modifier = Modifier
-                                    .height(bottomButtonHeight)
-                            ) {
-                                Text("Iniciar Viagem", fontSize = mapButtonFontSize)
-                            }
-                        }
-                        TripState.RUNNING -> {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        when (tripState) {
+                            TripState.IDLE -> {
                                 Button(
-                                    onClick = { tripState = TripState.PAUSED },
+                                    onClick = {
+                                        tripState = TripState.RUNNING
+                                        // Choose ONE of these:
+                                        viewModel.startTrip() // Real GPS
+                                        // viewModel.startSimulatedTrip() // Fake movement for testing
+                                    },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text("Pausar", fontSize = mapButtonFontSize)
-                                }
-                                Button(
-                                    onClick = { tripState = TripState.IDLE },
-                                    modifier = Modifier.height(bottomButtonHeight)
-                                ) {
-                                    Text("Parar", fontSize = mapButtonFontSize)
+                                    Text("Iniciar Viagem", fontSize = mapButtonFontSize)
                                 }
                             }
-                        }
-                        TripState.PAUSED -> {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            TripState.RUNNING -> {
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Button(
+                                        onClick = {
+                                            tripState = TripState.PAUSED
+                                            // Optional: You could pause updates here if you want
+                                        },
+                                        modifier = Modifier.height(bottomButtonHeight)
+                                    ) {
+                                        Text("Pausar", fontSize = mapButtonFontSize)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            tripState = TripState.IDLE
+                                            viewModel.stopTrip() // Stop tracking and save
+                                        },
+                                        modifier = Modifier.height(bottomButtonHeight)
+                                    ) {
+                                        Text("Parar", fontSize = mapButtonFontSize)
+                                    }
+                                }
+                            }
+                            TripState.PAUSED -> {
+                                // ... Lógica similar para Retomar ...
                                 Button(
                                     onClick = { tripState = TripState.RUNNING },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
                                     Text("Retomar", fontSize = mapButtonFontSize)
                                 }
-                                Button(
-                                    onClick = { tripState = TripState.IDLE },
-                                    modifier = Modifier.height(bottomButtonHeight)
-                                ) {
-                                    Text("Parar", fontSize = mapButtonFontSize)
-                                }
                             }
-                        }
                     }
                 }
             }
