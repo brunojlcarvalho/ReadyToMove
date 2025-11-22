@@ -25,20 +25,29 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         loadUserData()
     }
 
+    // --- NOVO MÉTODO ---
+    // Chamado pelo UI para forçar atualização dos dados (pontos/trips)
+    fun refreshUserData() {
+        loadUserData()
+    }
+
     private fun loadUserData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // 1. Tenta carregar do Room (Cache local - mais rápido)
                 val cachedUser = localRepository.getUser(uid)
                 cachedUser?.let { _user.value = it }
 
+                // 2. (Opcional) Sincronizar com Firebase se tiveres backend
+                /*
                 val snapshot = db.collection("users").document(uid).get().await()
                 val remoteUser = snapshot.toObject(User::class.java)
-
                 remoteUser?.let {
                     localRepository.saveUser(it)
                     _user.value = it
                 }
+                */
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -49,23 +58,24 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // Update Firebase
                 db.collection("users").document(uid)
                     .update("name", newName)
                     .await()
 
+                // Update Local & State
                 val updatedUser = _user.value?.copy(name = newName)
                 _user.value = updatedUser
                 updatedUser?.let { localRepository.saveUser(it) }
 
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
     fun logout() {
         viewModelScope.launch {
-            _user.value?.let { localRepository.deleteUser(it) }
+            // Opcional: Limpar dados locais ao sair
+            // _user.value?.let { localRepository.deleteUser(it) }
             auth.signOut()
         }
     }

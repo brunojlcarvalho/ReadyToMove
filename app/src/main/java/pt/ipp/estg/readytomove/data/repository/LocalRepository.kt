@@ -33,6 +33,7 @@ class LocalRepository private constructor(private val db: AppDatabase) {
     }
 
     suspend fun addTrip(userId: String, startTime: Long, endTime: Long?, distanceMeters: Double) {
+        // 1. Guardar a Viagem na tabela 'trips'
         val tripCache = TripCache(
             userId = userId,
             startTime = startTime,
@@ -40,6 +41,19 @@ class LocalRepository private constructor(private val db: AppDatabase) {
             distanceMeters = distanceMeters
         )
         tripDao.insert(tripCache)
+
+        // 2. Calcular pontos (1 ponto a cada 100 metros)
+        val pointsEarned = calculatePointsFromDistance(distanceMeters)
+
+        // 3. Atualizar o Utilizador na tabela 'users'
+        val currentUserCache = userDao.getById(userId)
+        if (currentUserCache != null) {
+            val updatedUser = currentUserCache.copy(
+                totalTrips = currentUserCache.totalTrips + 1,       // +1 Viagem
+                points = currentUserCache.points + pointsEarned     // +Pontos
+            )
+            userDao.insert(updatedUser) // O Room faz replace se o ID for igual
+        }
     }
 
     fun observeTripsForUser(userId: String): Flow<List<Trip>> {
