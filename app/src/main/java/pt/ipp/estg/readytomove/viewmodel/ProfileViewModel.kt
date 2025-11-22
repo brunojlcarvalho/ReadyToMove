@@ -25,8 +25,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         loadUserData()
     }
 
-    // --- NOVO MÉTODO ---
-    // Chamado pelo UI para forçar atualização dos dados (pontos/trips)
     fun refreshUserData() {
         loadUserData()
     }
@@ -35,19 +33,28 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
-                // 1. Tenta carregar do Room (Cache local - mais rápido)
+                // 1. Primeiro carrega o que temos localmente (Instantâneo)
                 val cachedUser = localRepository.getUser(uid)
                 cachedUser?.let { _user.value = it }
 
-                // 2. (Opcional) Sincronizar com Firebase se tiveres backend
-                /*
-                val snapshot = db.collection("users").document(uid).get().await()
-                val remoteUser = snapshot.toObject(User::class.java)
-                remoteUser?.let {
-                    localRepository.saveUser(it)
-                    _user.value = it
+                // 2. Sincronizar com Firebase (Vai buscar os dados reais à cloud)
+                try {
+                    val snapshot = db.collection("users").document(uid).get().await()
+                    val remoteUser = snapshot.toObject(User::class.java)
+
+                    // Se encontrarmos o user na cloud, atualizamos a cache local e a UI
+                    if (remoteUser != null) {
+                        // Garantir que o ID está correto caso o objeto venha sem ID
+                        val finalUser = remoteUser.copy(id = uid)
+
+                        localRepository.saveUser(finalUser)
+                        _user.value = finalUser
+                    }
+                } catch (e: Exception) {
+                    // Se falhar a net, continuamos a mostrar os dados locais silenciosamente
+                    e.printStackTrace()
                 }
-                */
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -65,8 +72,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
                 // Update Local & State
                 val updatedUser = _user.value?.copy(name = newName)
-                _user.value = updatedUser
-                updatedUser?.let { localRepository.saveUser(it) }
+                if (updatedUser != null) {
+                    _user.value = updatedUser
+                    localRepository.saveUser(updatedUser)
+                }
 
             } catch (e: Exception) { e.printStackTrace() }
         }
@@ -74,8 +83,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
 
     fun logout() {
         viewModelScope.launch {
-            // Opcional: Limpar dados locais ao sair
-            // _user.value?.let { localRepository.deleteUser(it) }
             auth.signOut()
         }
     }
