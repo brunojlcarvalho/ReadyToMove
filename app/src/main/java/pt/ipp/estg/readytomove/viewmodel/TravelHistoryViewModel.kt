@@ -81,4 +81,8 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
             }
         }
     }
+
+    fun getTripById(tripId: String): Trip? {
+        return _trips.value.find { it.id == tripId }
+    }
 }

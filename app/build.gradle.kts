@@ -88,6 +88,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.adaptive)
+    implementation(libs.androidx.compose.foundation)
     kapt("androidx.room:room-compiler:2.6.1")
 
     implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")

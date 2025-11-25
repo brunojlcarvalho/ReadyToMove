@@ -54,13 +54,34 @@ class LocalRepository private constructor(private val db: AppDatabase) {
         }
     }
 
-    suspend fun saveRemoteTrips(userId: String, trips: List<TripCache>) {
-        // 1. Apagar TODAS as viagens antigas deste user localmente (Limpar Cache)
-        tripDao.deleteByUser(userId)
+    // --- CORREÇÃO AQUI ---
+    suspend fun saveRemoteTrips(userId: String, remoteTrips: List<TripCache>) {
+        // 1. Buscar viagens existentes na cache local
+        val localTrips = tripDao.getByUser(userId)
 
-        // 2. Inserir as novas que vieram da nuvem (Atualizar Cache)
-        for (trip in trips) {
-            tripDao.insert(trip)
+        // 2. Criar um mapa para encontrar viagens locais pelo "startTime" (chave única lógica)
+        val localMap = localTrips.associateBy { it.startTime }
+        val remoteStartTimes = remoteTrips.map { it.startTime }.toSet()
+
+        // 3. Inserir novas ou Atualizar existentes (mantendo o ID)
+        for (remote in remoteTrips) {
+            val local = localMap[remote.startTime]
+            if (local != null) {
+                // Se já existe, usamos o ID da versão local para substituir
+                // Isto impede que o ID mude e que o ecrã de detalhes "perca" a viagem
+                val updatedTrip = remote.copy(id = local.id)
+                tripDao.insert(updatedTrip)
+            } else {
+                // Se é nova, inserimos tal como veio (id=0 gera um novo)
+                tripDao.insert(remote)
+            }
+        }
+
+        // 4. (Opcional) Apagar viagens locais que já não existem na nuvem
+        for (local in localTrips) {
+            if (local.startTime !in remoteStartTimes) {
+                tripDao.deleteById(local.id)
+            }
         }
     }
 
@@ -75,14 +96,14 @@ class LocalRepository private constructor(private val db: AppDatabase) {
                 val end = cache.endTime ?: cache.startTime
                 val diffMillis = end - cache.startTime
                 val durationMin = TimeUnit.MILLISECONDS.toMinutes(diffMillis)
-                val durationStr = if (durationMin < 1) "< 1 min" else "$durationMin min"
+                val durationStr = if (durationMin < 1L) "< 1 min" else "$durationMin min"
 
                 Trip(
                     id = cache.id.toString(),
                     date = date,
                     distanceKm = (cache.distanceMeters / 1000.0),
                     points = calculatePointsFromDistance(cache.distanceMeters),
-                    duration = durationStr // Preencher novo campo
+                    duration = durationStr
                 )
             }
         }

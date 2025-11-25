@@ -34,10 +34,11 @@ import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
+fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: WindowSizeClass, viewModel: TravelHistoryViewModel = viewModel()) {
     val viewModel: TravelHistoryViewModel = viewModel()
     val trips by viewModel.trips.collectAsState()
 
@@ -123,8 +124,11 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                         date = trip.date,
                         distanceKm = trip.distanceKm,
                         points = trip.points,
-                        duration = trip.duration, // Passar duração
-                        isTablet = isTablet
+                        duration = trip.duration,
+                        isTablet = isTablet,
+                        onClick= {
+                            navController.navigate("tripDetails/${trip.id}")
+                        }
                     )
                 }
             }
@@ -306,12 +310,14 @@ private fun TripCard(
     distanceKm: Double,
     points: Int,
     duration: String,
-    isTablet: Boolean
+    isTablet: Boolean,
+    onClick: () -> Unit,
 ) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = if (isTablet) 8.dp else 16.dp),
+            .padding(horizontal = if (isTablet) 8.dp else 16.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(if (isTablet) 20.dp else 18.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isTablet) 6.dp else 4.dp)
     ) {
