@@ -99,7 +99,7 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             onLogout = {
                 viewModel.logout()
                 navController.navigate("login") {
-                    popUpTo("map") { inclusive = true }
+                    popUpTo(0) { inclusive = true }
                 }
             }
         )

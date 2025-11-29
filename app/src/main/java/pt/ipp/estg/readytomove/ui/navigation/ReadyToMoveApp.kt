@@ -9,6 +9,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.auth.FirebaseAuth
 import pt.ipp.estg.readytomove.ui.screens.travel.TripDetailsScreen
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
@@ -26,12 +27,17 @@ fun ReadyToMoveApp(
 ) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "login") {
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val startDestination = if (currentUser != null) "map" else "login"
+
+    NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
             LoginScreen(
                 viewModel = viewModel(),
                 windowSizeClass = windowSizeClass,
-                onLoginSuccess = { navController.navigate("map") },
+                onLoginSuccess = { navController.navigate("map") {
+                    popUpTo("login") { inclusive = true }
+                } },
                 onRegisterClick = { navController.navigate("register") }
             )
         }
@@ -39,7 +45,9 @@ fun ReadyToMoveApp(
             RegisterScreen(
                 viewModel = viewModel(),
                 windowSizeClass = windowSizeClass,
-                onRegisterSuccess = { navController.navigate("map") },
+                onRegisterSuccess = { navController.navigate("map") {
+                    popUpTo("login") { inclusive = true }
+                } },
                 onLoginClick = { navController.navigate("login") }
             )
         }
