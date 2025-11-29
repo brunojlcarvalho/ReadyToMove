@@ -6,6 +6,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.compose.runtime.LaunchedEffect
+import pt.ipp.estg.readytomove.ui.screens.travel.TripDetailsScreen
+import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 import pt.ipp.estg.readytomove.ui.screens.home.LoginScreen
 import pt.ipp.estg.readytomove.ui.screens.home.RegisterScreen
 import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
@@ -48,6 +53,31 @@ fun ReadyToMoveApp(
         }
         composable("profile") { ProfileScreen(navController, windowSizeClass) }
         composable("leaderboard") { LeaderboardScreen(navController, windowSizeClass) }
-        composable("travel_history") { TravelHistoryScreen(navController, windowSizeClass) }
+        composable("travel_history") {
+            val historyViewModel: TravelHistoryViewModel = viewModel()
+            TravelHistoryScreen(
+                navController,
+                windowSizeClass,
+                historyViewModel
+            )
+        }
+        composable(
+            route = "tripDetails/{tripId}",
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
+            val historyViewModel: TravelHistoryViewModel = viewModel()
+
+            LaunchedEffect(Unit) {
+                if (historyViewModel.trips.value.isEmpty()) historyViewModel.loadUserTrips()
+            }
+
+            TripDetailsScreen(
+                navController = navController,
+                tripId = tripId,
+                viewModel = historyViewModel,
+                windowSizeClass = windowSizeClass
+            )
+        }
     }
 }

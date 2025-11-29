@@ -25,20 +25,36 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         loadUserData()
     }
 
+    fun refreshUserData() {
+        loadUserData()
+    }
+
     private fun loadUserData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // 1. Primeiro carrega o que temos localmente (Instantâneo)
                 val cachedUser = localRepository.getUser(uid)
                 cachedUser?.let { _user.value = it }
 
-                val snapshot = db.collection("users").document(uid).get().await()
-                val remoteUser = snapshot.toObject(User::class.java)
+                // 2. Sincronizar com Firebase (Vai buscar os dados reais à cloud)
+                try {
+                    val snapshot = db.collection("users").document(uid).get().await()
+                    val remoteUser = snapshot.toObject(User::class.java)
 
-                remoteUser?.let {
-                    localRepository.saveUser(it)
-                    _user.value = it
+                    // Se encontrarmos o user na cloud, atualizamos a cache local e a UI
+                    if (remoteUser != null) {
+                        // Garantir que o ID está correto caso o objeto venha sem ID
+                        val finalUser = remoteUser.copy(id = uid)
+
+                        localRepository.saveUser(finalUser)
+                        _user.value = finalUser
+                    }
+                } catch (e: Exception) {
+                    // Se falhar a net, continuamos a mostrar os dados locais silenciosamente
+                    e.printStackTrace()
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -49,23 +65,24 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
+                // Update Firebase
                 db.collection("users").document(uid)
                     .update("name", newName)
                     .await()
 
+                // Update Local & State
                 val updatedUser = _user.value?.copy(name = newName)
-                _user.value = updatedUser
-                updatedUser?.let { localRepository.saveUser(it) }
+                if (updatedUser != null) {
+                    _user.value = updatedUser
+                    localRepository.saveUser(updatedUser)
+                }
 
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
     fun logout() {
         viewModelScope.launch {
-            _user.value?.let { localRepository.deleteUser(it) }
             auth.signOut()
         }
     }

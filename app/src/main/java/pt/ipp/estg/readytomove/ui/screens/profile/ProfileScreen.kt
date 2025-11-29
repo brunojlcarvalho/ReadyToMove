@@ -56,6 +56,10 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
     val viewModel: ProfileViewModel = viewModel()
     val user by viewModel.user.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshUserData()
+    }
+
     if (user == null) {
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
@@ -82,6 +86,7 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             }
         }
     } else {
+        // Chama o Scaffold que já tinhas (não precisas de alterar o ProfileScreenScaffold abaixo)
         ProfileScreenScaffold(
             windowSizeClass = windowSizeClass,
             userName = user!!.name,
