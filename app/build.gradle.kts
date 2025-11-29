@@ -13,7 +13,6 @@ val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
-
 android {
     namespace = "pt.ipp.estg.readytomove"
     compileSdk = 36
