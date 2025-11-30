@@ -2,6 +2,11 @@ package pt.ipp.estg.readytomove.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
@@ -23,7 +28,7 @@ import pt.ipp.estg.readytomove.data.repository.LocalRepository
 import pt.ipp.estg.readytomove.data.retrofit.RetrofitHelper
 import java.util.Date
 
-class MapViewModel(application: Application) : AndroidViewModel(application) {
+class MapViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(application)
@@ -31,7 +36,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     // --- FIREBASE & REPOSITORIES ---
     private val localRepository = LocalRepository.getInstance(application)
     private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance() // Adicionado Firestore
+    private val db = FirebaseFirestore.getInstance()
 
     // Estados de UI
     private val _currentLocation = MutableStateFlow<Location?>(null)
@@ -42,12 +47,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _operatorPoints = MutableStateFlow<List<OperatorPoint>>(emptyList())
     val operatorPoints: StateFlow<List<OperatorPoint>> = _operatorPoints
+    private val _isLowLight = MutableStateFlow(false)
+    val isLowLight: StateFlow<Boolean> = _isLowLight
 
     // Variáveis de Controlo
     private var isTracking = false
     private var tripStartTime: Long = 0
     private var locationCallback: LocationCallback? = null
     private var simulationJob: Job? = null
+
+    //SENSORES
+    private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     // Config GeoApify
     private val geoapifyDataSource = GeoApifyDataSource(
@@ -59,6 +70,17 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000)
         .setMinUpdateIntervalMillis(2000)
         .build()
+
+    init {
+        lightSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        sensorManager.unregisterListener(this)
+    }
 
     // --- INICIAR VIAGEM ---
     @SuppressLint("MissingPermission")
@@ -81,6 +103,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun startSimulatedTrip() {
         resetTripData()
         isTracking = true
+
         var currentLat = 41.366
         var currentLng = -8.195
 
@@ -100,7 +123,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // --- PARAR VIAGEM (Lógica de Guardar Atualizada) ---
+    // --- PARAR VIAGEM ---
     fun stopTrip() {
         if (!isTracking) return
         isTracking = false
@@ -108,57 +131,37 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
         simulationJob?.cancel()
 
-        // 1. Calcular Dados da Viagem
         val finalPoints = _routePoints.value
         val totalDistanceMeters = calculateDistance(finalPoints)
         val endTime = System.currentTimeMillis()
         val userId = auth.currentUser?.uid
-
-        // Calcular pontos (mesma lógica do LocalRepository: 1 pt a cada 100m)
         val pointsEarned = (totalDistanceMeters / 100.0).toInt()
 
         if (userId != null && totalDistanceMeters > 0) {
             viewModelScope.launch {
-
-                // A. Guardar LOCALMENTE (Room) - Para a app ser rápida e funcionar offline
                 localRepository.addTrip(
                     userId = userId,
                     startTime = tripStartTime,
                     endTime = endTime,
                     distanceMeters = totalDistanceMeters
                 )
-
-                // B. Guardar no FIREBASE (Cloud) - Para persistência real
                 saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned)
             }
         }
-
         _routePoints.value = emptyList()
     }
 
     private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int) {
-        // 1. Criar objeto da viagem
         val tripData = hashMapOf(
             "userId" to userId,
             "startTime" to start,
             "endTime" to end,
             "distanceMeters" to distance,
             "pointsEarned" to points,
-            "date" to Date(start) // Data legível para o Firestore
+            "date" to Date(start)
         )
+        db.collection("trips").add(tripData)
 
-        // 2. Adicionar à coleção "trips"
-        db.collection("trips")
-            .add(tripData)
-            .addOnSuccessListener {
-                // Sucesso ao criar trip
-            }
-            .addOnFailureListener { e ->
-                e.printStackTrace()
-            }
-
-        // 3. Atualizar totais do utilizador na coleção "users"
-        // Usamos FieldValue.increment para garantir que somamos atomicamente (sem race conditions)
         val userRef = db.collection("users").document(userId)
         userRef.update(
             "totalTrips", FieldValue.increment(1),
@@ -209,5 +212,16 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                 _operatorPoints.value = repository.getAllOperators()
             } catch (e: Exception) { e.printStackTrace() }
         }
+    }
+
+    //CALLBACK DO SENSOR DE LUZ
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+            val lux = event.values[0]
+            _isLowLight.value = lux < 20f
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 }

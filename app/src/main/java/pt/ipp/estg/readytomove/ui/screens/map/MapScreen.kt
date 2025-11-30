@@ -42,6 +42,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.delay // Importante para o temporizador
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.ui.theme.Theme
@@ -115,8 +116,25 @@ fun MapScreen(
 
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
-    // Observe the route points to draw the line
     val routePoints by viewModel.routePoints.collectAsState()
+    val isLowLight by viewModel.isLowLight.collectAsState()
+    var showLowLightMessage by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isLowLight) {
+        if (isLowLight) {
+            showLowLightMessage = true
+            delay(2000)
+            showLowLightMessage = false
+        } else {
+            showLowLightMessage = false
+        }
+    }
+
+    LaunchedEffect(isLowLight) {
+        if (isDarkTheme != isLowLight) {
+            onToggleTheme(isLowLight)
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -215,7 +233,6 @@ fun MapScreen(
                     uiSettings = mapUiSettings.value,
                     cameraPositionState = cameraPositionState
                 ) {
-                    // 1. Draw the user route (Polyline)
                     if (routePoints.isNotEmpty()) {
                         Polyline(
                             points = routePoints,
@@ -224,19 +241,14 @@ fun MapScreen(
                         )
                     }
 
-                    // 2. User Marker and Camera Follow Logic
                     location?.let {
                         val userLatLng = LatLng(it.latitude, it.longitude)
 
                         Marker(
                             state = MarkerState(position = userLatLng),
                             title = "Eu",
-                            // Sets the center of the image as the anchor point (0.5, 0.5)
-                            // Default is (0.5, 1.0) which is bottom-center (for pins)
                             anchor = Offset(0.5f, 0.5f),
-                            // Load the custom drawable we created
                             icon = bitmapDescriptorFromVectorOriginal(context, R.drawable.ic_user_puck),
-                            // Ensure it's drawn above other markers
                             zIndex = 1.0f
                         )
 
@@ -276,51 +288,66 @@ fun MapScreen(
                         .padding(bottom = bottomPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                        when (tripState) {
-                            TripState.IDLE -> {
+                    // --- CORREÇÃO: Mostra apenas se a variável temporal for true ---
+                    if (showLowLightMessage) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.Black.copy(alpha = 0.7f),
+                            contentColor = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Modo Noturno (Sensor de Luz)", fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    when (tripState) {
+                        TripState.IDLE -> {
+                            Button(
+                                onClick = {
+                                    tripState = TripState.RUNNING
+                                    viewModel.startTrip()
+                                },
+                                modifier = Modifier.height(bottomButtonHeight)
+                            ) {
+                                Text("Iniciar Viagem", fontSize = mapButtonFontSize)
+                            }
+                        }
+                        TripState.RUNNING -> {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Button(
                                     onClick = {
-                                        tripState = TripState.RUNNING
-                                        // Choose ONE of these:
-                                        viewModel.startTrip() // Real GPS
-                                        // viewModel.startSimulatedTrip() // Fake movement for testing
+                                        tripState = TripState.PAUSED
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text("Iniciar Viagem", fontSize = mapButtonFontSize)
+                                    Text("Pausar", fontSize = mapButtonFontSize)
                                 }
-                            }
-                            TripState.RUNNING -> {
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Button(
-                                        onClick = {
-                                            tripState = TripState.PAUSED
-                                            // Optional: You could pause updates here if you want
-                                        },
-                                        modifier = Modifier.height(bottomButtonHeight)
-                                    ) {
-                                        Text("Pausar", fontSize = mapButtonFontSize)
-                                    }
-                                    Button(
-                                        onClick = {
-                                            tripState = TripState.IDLE
-                                            viewModel.stopTrip() // Stop tracking and save
-                                        },
-                                        modifier = Modifier.height(bottomButtonHeight)
-                                    ) {
-                                        Text("Parar", fontSize = mapButtonFontSize)
-                                    }
-                                }
-                            }
-                            TripState.PAUSED -> {
-                                // ... Lógica similar para Retomar ...
                                 Button(
-                                    onClick = { tripState = TripState.RUNNING },
+                                    onClick = {
+                                        tripState = TripState.IDLE
+                                        viewModel.stopTrip()
+                                    },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text("Retomar", fontSize = mapButtonFontSize)
+                                    Text("Parar", fontSize = mapButtonFontSize)
                                 }
                             }
+                        }
+                        TripState.PAUSED -> {
+                            Button(
+                                onClick = { tripState = TripState.RUNNING },
+                                modifier = Modifier.height(bottomButtonHeight)
+                            ) {
+                                Text("Retomar", fontSize = mapButtonFontSize)
+                            }
+                        }
                     }
                 }
             }
