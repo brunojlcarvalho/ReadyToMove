@@ -2,11 +2,6 @@ package pt.ipp.estg.readytomove.viewmodel
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.location.Location
 import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
@@ -23,22 +18,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.data.geoapify.GeoApifyDataSource
 import pt.ipp.estg.readytomove.data.model.OperatorPoint
+import pt.ipp.estg.readytomove.data.model.OperatorType
 import pt.ipp.estg.readytomove.data.repository.GeoApifyRepository
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
 import pt.ipp.estg.readytomove.data.retrofit.RetrofitHelper
 import java.util.Date
 
-class MapViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
+class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(application)
 
-    // --- FIREBASE & REPOSITORIES ---
     private val localRepository = LocalRepository.getInstance(application)
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // Estados de UI
+    // --- ESTADOS UI ---
     private val _currentLocation = MutableStateFlow<Location?>(null)
     val currentLocation: StateFlow<Location?> = _currentLocation
 
@@ -47,46 +42,42 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
 
     private val _operatorPoints = MutableStateFlow<List<OperatorPoint>>(emptyList())
     val operatorPoints: StateFlow<List<OperatorPoint>> = _operatorPoints
+
     private val _isLowLight = MutableStateFlow(false)
     val isLowLight: StateFlow<Boolean> = _isLowLight
 
-    // Variáveis de Controlo
-    private var isTracking = false
+    private val _uiMessage = MutableStateFlow<String?>(null)
+    val uiMessage: StateFlow<String?> = _uiMessage
+
+    private val _isTrackingState = MutableStateFlow(false)
+    val isTrackingState: StateFlow<Boolean> = _isTrackingState
+
+    // --- VARIÁVEIS DE CONTROLO ---
+    private var isTracking = false // Controla apenas se estamos a GRAVAR a rota
     private var tripStartTime: Long = 0
+    private var startPointType: OperatorType? = null
+
+    // Callback de localização persistente
     private var locationCallback: LocationCallback? = null
+
     private var simulationJob: Job? = null
 
-    //SENSORES
-    private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
-
-    // Config GeoApify
+    // --- REPOSITÓRIOS ---
     private val geoapifyDataSource = GeoApifyDataSource(
         retrofit = RetrofitHelper.retrofit("https://api.geoapify.com/"),
         apiKey = "18d9603dbce24498a3959b908acfa516"
     )
     private val repository = GeoApifyRepository(geoapifyDataSource)
 
+    // Configuração GPS: Alta precisão
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000)
         .setMinUpdateIntervalMillis(2000)
         .build()
 
-    init {
-        lightSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        sensorManager.unregisterListener(this)
-    }
-
-    // --- INICIAR VIAGEM ---
+    // --- NOVA FUNÇÃO: Iniciar GPS (Independente da Viagem) ---
     @SuppressLint("MissingPermission")
-    fun startTrip() {
-        resetTripData()
-        isTracking = true
+    fun startLocationUpdates() {
+        if (locationCallback != null) return // Já está a correr
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
@@ -95,14 +86,51 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
                 }
             }
         }
+
         try {
-            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback!!, Looper.getMainLooper())
-        } catch (e: Exception) { e.printStackTrace() }
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback!!,
+                Looper.getMainLooper()
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // --- FUNÇÕES DE VIAGEM ---
+
+    fun startTrip() {
+        val currentLoc = _currentLocation.value
+
+        if (currentLoc == null) {
+            _uiMessage.value = "A aguardar localização GPS..."
+            return
+        }
+
+        val nearestPoint = findNearestOperator(currentLoc, 10.0)
+
+        if (nearestPoint == null) {
+            _uiMessage.value = "Tens de estar a 10m de um ponto (Bus/Bike) para iniciar!"
+            return
+        }
+
+        // Tudo OK -> Iniciar Gravação
+        startPointType = nearestPoint.type
+        resetTripData()
+
+        isTracking = true // Começa a gravar os pontos
+        _isTrackingState.value = true
+        _uiMessage.value = "Viagem iniciada em: ${nearestPoint.name}"
+
+        // NOTA: Removemos daqui o requestLocationUpdates porque ele já deve estar a correr
     }
 
     fun startSimulatedTrip() {
         resetTripData()
         isTracking = true
+        _isTrackingState.value = true
+        startPointType = OperatorType.BUS
 
         var currentLat = 41.366
         var currentLng = -8.195
@@ -123,13 +151,34 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
         }
     }
 
-    // --- PARAR VIAGEM ---
     fun stopTrip() {
         if (!isTracking) return
-        isTracking = false
 
-        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        val currentLoc = _currentLocation.value
+
+        if (currentLoc == null) {
+            _uiMessage.value = "Sem GPS."
+            return
+        }
+
+        val nearestPoint = findNearestOperator(currentLoc, 10.0)
+
+        if (nearestPoint == null) {
+            _uiMessage.value = "Tens de estar a 10m de um ponto para terminar a viagem!"
+            return
+        }
+
+        if (startPointType != null && nearestPoint.type != startPointType) {
+            _uiMessage.value = "Iniciaste em ${startPointType?.name}, tens de acabar num igual!"
+            return
+        }
+
+        // Parar Gravação
+        isTracking = false
+        _isTrackingState.value = false
         simulationJob?.cancel()
+
+        // NOTA: NÃO paramos o fusedLocationClient aqui. O GPS continua ligado para o boneco andar.
 
         val finalPoints = _routePoints.value
         val totalDistanceMeters = calculateDistance(finalPoints)
@@ -137,18 +186,87 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
         val userId = auth.currentUser?.uid
         val pointsEarned = (totalDistanceMeters / 100.0).toInt()
 
-        if (userId != null && totalDistanceMeters > 0) {
+        if (userId != null) {
             viewModelScope.launch {
-                localRepository.addTrip(
-                    userId = userId,
-                    startTime = tripStartTime,
-                    endTime = endTime,
-                    distanceMeters = totalDistanceMeters
-                )
-                saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned)
+                localRepository.addTrip(userId, tripStartTime, endTime, totalDistanceMeters)
+                try {
+                    saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned)
+                } catch (e: Exception) { e.printStackTrace() }
+            }
+            _uiMessage.value = "Viagem terminada! Ganhaste $pointsEarned pontos."
+        }
+
+        _routePoints.value = emptyList()
+        startPointType = null
+    }
+
+    // Limpar GPS quando o ViewModel morre (ex: fechar app)
+    override fun onCleared() {
+        super.onCleared()
+        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+    }
+
+    // --- FUNÇÕES AUXILIARES ---
+
+    private fun updateLocation(location: Location) {
+        // 1. Atualizar SEMPRE a localização atual (Boneco mexe-se sempre)
+        _currentLocation.value = location
+
+        // Carregar operadores à volta (sempre que nos movemos)
+        loadOperators(location.latitude, location.longitude)
+
+        // 2. SÓ adicionar à lista se estivermos numa viagem (Linha azul)
+        if (isTracking) {
+            val newPoint = LatLng(location.latitude, location.longitude)
+            val currentList = _routePoints.value.toMutableList()
+            currentList.add(newPoint)
+            _routePoints.value = currentList
+        }
+    }
+
+    private fun findNearestOperator(currentLoc: Location, maxDistanceMeters: Double): OperatorPoint? {
+        val allPoints = _operatorPoints.value
+        var closestPoint: OperatorPoint? = null
+        var minDistance = Float.MAX_VALUE
+
+        for (point in allPoints) {
+            val pointLoc = Location("point").apply {
+                latitude = point.lat
+                longitude = point.lon
+            }
+            val distance = currentLoc.distanceTo(pointLoc)
+
+            if (distance < minDistance) {
+                minDistance = distance
+                closestPoint = point
             }
         }
-        _routePoints.value = emptyList()
+        return if (minDistance <= maxDistanceMeters) closestPoint else null
+    }
+
+    fun clearUiMessage() {
+        _uiMessage.value = null
+    }
+
+    // Método antigo getUserLocation (snapshot) pode ser mantido para inicialização rápida se quiseres
+    @SuppressLint("MissingPermission")
+    fun getUserLocation() {
+        try {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    _currentLocation.value = it
+                    loadOperators(it.latitude, it.longitude)
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    fun loadOperators(lat: Double, lon: Double) {
+        viewModelScope.launch {
+            try {
+                _operatorPoints.value = repository.getAllOperators(lat, lon)
+            } catch (e: Exception) { e.printStackTrace() }
+        }
     }
 
     private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int) {
@@ -174,16 +292,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
         tripStartTime = System.currentTimeMillis()
     }
 
-    private fun updateLocation(location: Location) {
-        _currentLocation.value = location
-        if (isTracking) {
-            val newPoint = LatLng(location.latitude, location.longitude)
-            val currentList = _routePoints.value.toMutableList()
-            currentList.add(newPoint)
-            _routePoints.value = currentList
-        }
-    }
-
     private fun calculateDistance(points: List<LatLng>): Double {
         var totalDistance = 0.0
         if (points.size < 2) return 0.0
@@ -195,37 +303,5 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
             totalDistance += results[0]
         }
         return totalDistance
-    }
-
-    @SuppressLint("MissingPermission")
-    fun getUserLocation() {
-        try {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    _currentLocation.value = it
-
-                    loadOperators(it.latitude, it.longitude)
-                }
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    fun loadOperators(lat: Double, lon: Double) {
-        viewModelScope.launch {
-            try {
-                _operatorPoints.value = repository.getAllOperators(lat, lon)
-            } catch (e: Exception) { e.printStackTrace() }
-        }
-    }
-
-    //CALLBACK DO SENSOR DE LUZ
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
-            val lux = event.values[0]
-            _isLowLight.value = lux < 20f
-        }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 }
