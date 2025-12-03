@@ -8,9 +8,9 @@ import pt.ipp.estg.readytomove.data.model.OperatorType
 
 class GeoApifyRepository(private val dataSource: GeoApifyDataSource) {
 
-    suspend fun getBusStops(): List<OperatorPoint> {
+    suspend fun getBusStops(lat: Double, lon: Double): List<OperatorPoint> {
         return try {
-            val response = dataSource.fetchBusStops()
+            val response = dataSource.fetchBusStops(lat, lon)
 
             if (response.isSuccessful) {
                 val geoapifyResponse = response.body()
@@ -25,9 +25,9 @@ class GeoApifyRepository(private val dataSource: GeoApifyDataSource) {
         }
     }
 
-    suspend fun getBikeRentals(): List<OperatorPoint> {
+    suspend fun getBikeRentals(lat: Double, lon: Double): List<OperatorPoint> {
         return try {
-            val response = dataSource.fetchBikeRentals()
+            val response = dataSource.fetchBikeRentals(lat, lon)
             if (response.isSuccessful) {
                 val geoapifyResponse = response.body()
                 geoapifyResponse?.let { mapToOperatorPoints(it, OperatorType.BIKE, "Estação de bicicletas") } ?: emptyList()
@@ -41,9 +41,9 @@ class GeoApifyRepository(private val dataSource: GeoApifyDataSource) {
         }
     }
 
-    suspend fun getAllOperators(): List<OperatorPoint> {
-        val busStops = getBusStops()
-        val bikeRentals = getBikeRentals()
+    suspend fun getAllOperators(lat: Double, lon: Double): List<OperatorPoint> {
+        val busStops = getBusStops(lat, lon)
+        val bikeRentals = getBikeRentals(lat, lon)
         return busStops + bikeRentals
     }
 

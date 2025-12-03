@@ -201,15 +201,19 @@ class MapViewModel(application: Application) : AndroidViewModel(application), Se
     fun getUserLocation() {
         try {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let { _currentLocation.value = it }
+                location?.let {
+                    _currentLocation.value = it
+
+                    loadOperators(it.latitude, it.longitude)
+                }
             }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    fun loadOperators() {
+    fun loadOperators(lat: Double, lon: Double) {
         viewModelScope.launch {
             try {
-                _operatorPoints.value = repository.getAllOperators()
+                _operatorPoints.value = repository.getAllOperators(lat, lon)
             } catch (e: Exception) { e.printStackTrace() }
         }
     }

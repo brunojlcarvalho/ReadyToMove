@@ -142,7 +142,6 @@ fun MapScreen(
         hasPermission = granted
         if (granted) {
             viewModel.getUserLocation()
-            viewModel.loadOperators()
         }
     }
 
@@ -153,7 +152,6 @@ fun MapScreen(
         ) {
             hasPermission = true
             viewModel.getUserLocation()
-            viewModel.loadOperators()
         } else {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -279,6 +277,34 @@ fun MapScreen(
                             icon = bitmapDescriptorFromVector(context, iconRes, markerColor, 0.1f)
                         )
                     }
+                }
+
+                FloatingActionButton(
+                    onClick = {
+                        location?.let { loc ->
+                            scope.launch {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(loc.latitude, loc.longitude),
+                                        16f
+                                    ),
+                                    durationMs = 1000
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 810.dp, end = 16.dp)
+                        .size(40.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Centrar",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
                 Column(
