@@ -89,6 +89,7 @@ dependencies {
     implementation(libs.androidx.compose.adaptive)
     implementation(libs.androidx.compose.foundation)
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")
     implementation("androidx.compose.material3:material3-window-size-class:1.2.1")
