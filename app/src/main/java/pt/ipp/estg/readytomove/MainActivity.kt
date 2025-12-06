@@ -11,19 +11,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import pt.ipp.estg.readytomove.ui.navigation.ReadyToMoveApp
-import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
-import pt.ipp.estg.readytomove.ui.screens.map.MapScreen
-import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
 import pt.ipp.estg.readytomove.ui.theme.ReadyToMoveTheme
+import pt.ipp.estg.readytomove.util.NotificationHelper
+import pt.ipp.estg.readytomove.worker.LeaderboardWorker
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
@@ -32,11 +30,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
+        NotificationHelper.createNotificationChannel(this)
         FirebaseApp.initializeApp(this)
         FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
             DebugAppCheckProviderFactory.getInstance()
         )
+        setupBackgroundWorker()
 
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
@@ -55,6 +54,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun setupBackgroundWorker() {
+        val leaderboardWorkRequest = PeriodicWorkRequestBuilder<LeaderboardWorker>(
+            15, TimeUnit.MINUTES
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "LeaderboardCheck",
+            ExistingPeriodicWorkPolicy.KEEP,
+            leaderboardWorkRequest
+        )
+    }
 }
-
-
