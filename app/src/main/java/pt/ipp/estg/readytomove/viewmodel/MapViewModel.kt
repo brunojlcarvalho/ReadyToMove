@@ -29,7 +29,7 @@ import pt.ipp.estg.readytomove.data.model.OperatorType
 import pt.ipp.estg.readytomove.data.repository.GeoApifyRepository
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
 import pt.ipp.estg.readytomove.data.retrofit.RetrofitHelper
-import pt.ipp.estg.readytomove.service.LocationService // Certifica-te que tens este import
+import pt.ipp.estg.readytomove.service.LocationService
 import java.util.Date
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
@@ -50,9 +50,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _operatorPoints = MutableStateFlow<List<OperatorPoint>>(emptyList())
     val operatorPoints: StateFlow<List<OperatorPoint>> = _operatorPoints
-
-    private val _isLowLight = MutableStateFlow(false)
-    val isLowLight: StateFlow<Boolean> = _isLowLight
 
     private val _uiMessage = MutableStateFlow<String?>(null)
     val uiMessage: StateFlow<String?> = _uiMessage
@@ -106,20 +103,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     ContextCompat.RECEIVER_NOT_EXPORTED
                 )
             }
-        } else {
-            ContextCompat.registerReceiver(
-                application,
-                locationReceiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-        }
-    }
-
-    init {
-        val filter = IntentFilter(LocationService.ACTION_LOCATION_UPDATE)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            application.registerReceiver(locationReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             ContextCompat.registerReceiver(
                 application,
