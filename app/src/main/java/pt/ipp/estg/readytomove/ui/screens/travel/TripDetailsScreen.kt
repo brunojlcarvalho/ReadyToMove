@@ -1,5 +1,8 @@
 package pt.ipp.estg.readytomove.ui.screens.travel
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -23,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -37,11 +41,8 @@ fun TripDetailsScreen(
     viewModel: TravelHistoryViewModel,
     windowSizeClass: WindowSizeClass
 ) {
-    // CORREÇÃO: Observamos a lista inteira. Assim que ela carregar (do Room/Firebase),
-    // o Compose recalcula a variável 'trip'.
     val trips by viewModel.trips.collectAsState()
 
-    // Encontramos a viagem na lista atualizada
     val trip = remember(trips, tripId) {
         trips.find { it.id == tripId }
     }
@@ -49,6 +50,8 @@ fun TripDetailsScreen(
     val widthClass = windowSizeClass.widthSizeClass
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
+    val context = LocalContext.current
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -60,12 +63,21 @@ fun TripDetailsScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
+                actions = {
+                    if (trip != null) {
+                        IconButton(onClick = { shareTripViaSMS(context, trip) }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Partilhar por SMS"
+                            )
+                        }
+                    }
+                },
                 scrollBehavior = scrollBehavior
             )
         }
     ) { padding ->
         if (trip == null) {
-            // Se ainda estiver a carregar ou não existir
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -73,7 +85,7 @@ fun TripDetailsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (trips.isEmpty()) {
-                    CircularProgressIndicator() // Mostra loading se a lista ainda estiver vazia
+                    CircularProgressIndicator()
                 } else {
                     Text("Viagem não encontrada.")
                 }
@@ -88,7 +100,30 @@ fun TripDetailsScreen(
     }
 }
 
-// ... (O resto do ficheiro: TripDetailsContent, PointsHeaderCard, etc. mantém-se igual)
+private fun shareTripViaSMS(context: Context, trip: Trip) {
+    val message = """
+        Acabei de fazer uma viagem no ReadyToMove! 🏃‍♂️
+        
+        📅 Data: ${trip.date}
+        📏 Distância: ${String.format("%.2f km", trip.distanceKm)}
+        ⏱️ Duração: ${trip.duration}
+        ⭐ Pontos: ${trip.points} pts
+        
+        Vem explorar a cidade comigo!
+    """.trimIndent()
+
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("smsto:")
+        putExtra("sms_body", message)
+    }
+
+    try {
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
 @Composable
 private fun TripDetailsContent(
     trip: Trip,
@@ -102,7 +137,6 @@ private fun TripDetailsContent(
             .padding(if (isTablet) 32.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Cabeçalho com Pontos
         PointsHeaderCard(points = trip.points, date = trip.date)
 
         Text(
