@@ -179,16 +179,20 @@ fun MapScreen(
         }
     }
 
-    val mapProperties = remember {
-        mutableStateOf(
-            MapProperties(
-                isMyLocationEnabled = hasPermission,
-                mapStyleOptions = try {
-                    MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style)
-                } catch (e: Exception) {
-                    null
-                }
-            )
+    val mapProperties = remember(isDarkTheme, hasPermission) {
+        val mapStyleRes = if (isDarkTheme) {
+            R.raw.map_style_dark
+        } else {
+            R.raw.map_style
+        }
+
+        MapProperties(
+            isMyLocationEnabled = hasPermission,
+            mapStyleOptions = try {
+                MapStyleOptions.loadRawResourceStyle(context, mapStyleRes)
+            } catch (e: Exception) {
+                null
+            }
         )
     }
     val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false)) }
@@ -249,7 +253,7 @@ fun MapScreen(
             ) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
-                    properties = mapProperties.value,
+                    properties = mapProperties,
                     uiSettings = mapUiSettings.value,
                     cameraPositionState = cameraPositionState
                 ) {
@@ -287,10 +291,19 @@ fun MapScreen(
                             "BIKE" -> R.drawable.ic_bike
                             else -> R.drawable.ic_scooter
                         }
-                        val markerColor = when (op.type.name) {
-                            "BUS" -> Theme.markerColors.bus.toArgb()
-                            "BIKE" -> Theme.markerColors.bike.toArgb()
-                            else -> Theme.markerColors.scooter.toArgb()
+                        val markerColor = if (isDarkTheme) {
+
+                            when (op.type.name) {
+                                "BUS" -> Color(0xFF90CAF9).toArgb()
+                                "BIKE" -> Color(0xFFA5D6A7).toArgb()
+                                else -> Color(0xFFFFF59D).toArgb()
+                            }
+                        } else {
+                            when (op.type.name) {
+                                "BUS" -> Theme.markerColors.bus.toArgb()
+                                "BIKE" -> Theme.markerColors.bike.toArgb()
+                                else -> Theme.markerColors.scooter.toArgb()
+                            }
                         }
                         Marker(
                             state = MarkerState(LatLng(op.lat, op.lon)),
