@@ -2,7 +2,6 @@ package pt.ipp.estg.readytomove.ui.screens.map
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.view.Gravity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,9 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -28,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,15 +41,14 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
-import kotlinx.coroutines.delay // Importante para o temporizador
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.ui.theme.Theme
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
-import pt.ipp.estg.readytomove.viewmodel.MapViewModel
-import androidx.compose.ui.graphics.Color
-import com.google.maps.android.compose.Circle
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVectorOriginal
+import pt.ipp.estg.readytomove.util.rememberAmbientLightLevel
+import pt.ipp.estg.readytomove.viewmodel.MapViewModel
 
 enum class TripState { IDLE, RUNNING, PAUSED }
 
@@ -119,7 +115,10 @@ fun MapScreen(
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
-    val isLowLight by viewModel.isLowLight.collectAsState()
+
+    val currentLightLux = rememberAmbientLightLevel()
+    val isLowLight = currentLightLux < 10f
+
     var showLowLightMessage by remember { mutableStateOf(false) }
 
     val uiMessage by viewModel.uiMessage.collectAsState()
@@ -162,7 +161,7 @@ fun MapScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val notificationGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
+        //val notificationGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
 
         if (locationGranted) {
             hasPermission = true
@@ -362,7 +361,6 @@ fun MapScreen(
                         .padding(bottom = bottomPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // --- CORREÇÃO: Mostra apenas se a variável temporal for true ---
                     if (showLowLightMessage) {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
@@ -593,6 +591,7 @@ private fun ThemeToggle(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(

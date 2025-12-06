@@ -3,7 +3,7 @@ package pt.ipp.estg.readytomove.viewmodel
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel // MUDANÇA: Usar AndroidViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -14,15 +14,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import pt.ipp.estg.readytomove.data.model.LeaderboardEntry
 import pt.ipp.estg.readytomove.data.model.User
-import pt.ipp.estg.readytomove.util.NotificationHelper // O helper que criamos
+import pt.ipp.estg.readytomove.util.NotificationHelper
 
-// MUDANÇA: Herdar de AndroidViewModel para ter acesso ao 'getApplication()'
 class LeaderboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // SharedPreferences para guardar a última posição conhecida
     private val prefs = application.getSharedPreferences("leaderboard_prefs", Context.MODE_PRIVATE)
 
     private val _leaderboard = MutableStateFlow<List<LeaderboardEntry>>(emptyList())
@@ -64,9 +62,7 @@ class LeaderboardViewModel(application: Application) : AndroidViewModel(applicat
 
                 _leaderboard.value = entries
 
-                // --- LÓGICA DE NOTIFICAÇÃO ---
                 checkIfRankDropped(entries)
-                // -----------------------------
 
             } catch (e: Exception) {
                 Log.e("LeaderboardViewModel", "Erro ao carregar leaderboard: ${e.message}")
@@ -79,23 +75,15 @@ class LeaderboardViewModel(application: Application) : AndroidViewModel(applicat
     private fun checkIfRankDropped(entries: List<LeaderboardEntry>) {
         val currentUserId = auth.currentUser?.uid ?: return
 
-        // 1. Descobrir a posição atual do utilizador nesta lista
         val myEntry = entries.find { it.id == currentUserId } ?: return
         val currentRank = myEntry.position
 
-        // 2. Ler a posição antiga guardada (Default é -1 se não existir)
         val oldRank = prefs.getInt("last_rank_$currentUserId", -1)
 
-        // 3. Verificar a condição:
-        // - oldRank != -1 (significa que já tínhamos registo)
-        // - oldRank <= 3 (estava no TOP 3)
-        // - currentRank > oldRank (a posição atual é pior, ex: era 2, agora é 3 ou 4)
         if (oldRank != -1 && oldRank <= 3 && currentRank > oldRank) {
-            // Disparar notificação
             NotificationHelper.showRankDropNotification(getApplication(), oldRank, currentRank)
         }
 
-        // 4. Guardar a posição atual para a próxima comparação
         prefs.edit().putInt("last_rank_$currentUserId", currentRank).apply()
     }
 }
