@@ -2,6 +2,8 @@ package pt.ipp.estg.readytomove.ui.screens.map
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.view.Gravity
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
@@ -120,6 +122,18 @@ fun MapScreen(
     val isLowLight by viewModel.isLowLight.collectAsState()
     var showLowLightMessage by remember { mutableStateOf(false) }
 
+    val uiMessage by viewModel.uiMessage.collectAsState()
+
+    val isTrackingState by viewModel.isTrackingState.collectAsState()
+
+    LaunchedEffect(isTrackingState) {
+        if (isTrackingState) {
+            tripState = TripState.RUNNING
+        } else {
+            tripState = TripState.IDLE
+        }
+    }
+
     LaunchedEffect(isLowLight) {
         if (isLowLight) {
             showLowLightMessage = true
@@ -127,6 +141,14 @@ fun MapScreen(
             showLowLightMessage = false
         } else {
             showLowLightMessage = false
+        }
+    }
+
+    LaunchedEffect(uiMessage) {
+        uiMessage?.let { message ->
+            val toast = Toast.makeText(context, message, Toast.LENGTH_LONG)
+            toast.show()
+            viewModel.clearUiMessage()
         }
     }
 
@@ -141,8 +163,7 @@ fun MapScreen(
     ) { granted ->
         hasPermission = granted
         if (granted) {
-            viewModel.getUserLocation()
-            viewModel.loadOperators()
+            viewModel.startLocationUpdates()
         }
     }
 
@@ -152,8 +173,7 @@ fun MapScreen(
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             hasPermission = true
-            viewModel.getUserLocation()
-            viewModel.loadOperators()
+            viewModel.startLocationUpdates()
         } else {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -281,6 +301,34 @@ fun MapScreen(
                     }
                 }
 
+                FloatingActionButton(
+                    onClick = {
+                        location?.let { loc ->
+                            scope.launch {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(loc.latitude, loc.longitude),
+                                        16f
+                                    ),
+                                    durationMs = 1000
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 810.dp, end = 16.dp)
+                        .size(40.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = "Centrar",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -311,7 +359,6 @@ fun MapScreen(
                         TripState.IDLE -> {
                             Button(
                                 onClick = {
-                                    tripState = TripState.RUNNING
                                     viewModel.startTrip()
                                 },
                                 modifier = Modifier.height(bottomButtonHeight)
@@ -331,7 +378,6 @@ fun MapScreen(
                                 }
                                 Button(
                                     onClick = {
-                                        tripState = TripState.IDLE
                                         viewModel.stopTrip()
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
