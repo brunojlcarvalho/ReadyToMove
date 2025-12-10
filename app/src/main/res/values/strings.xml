@@ -1,3 +1,71 @@
 <resources>
     <string name="app_name">ReadyToMove</string>
+
+    // Login Strings
+    <string name="login_title">Login</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="create_account">Create account</string>
+    <string name="error_fill_fields">Please fill all fields</string>
+    <string name="error_to_login">Error logging in</string>
+
+    // Register Strings
+    <string name="name_label">Name</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="error_password_short">Password too short</string>
+    <string name="error_passwords_match">Passwords do not match</string>
+    <string name="error_registering">Registration failed</string>
+    <string name="already_have_account">I already have an account</string>
+
+    // Leaderboard Strings
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="back_description">Back</string>
+    <string name="top_users_title">Top Users</string>
+    <string name="top_users_subtitle">Who is leading this week</string>
+    <string name="points_abbrev">pts</string>
+
+    // Map Strings
+    <string name="menu_desc">Menu</string>
+    <string name="center_map_desc">Center</string>
+    <string name="night_mode_sensor">Night Mode (Light Sensor)</string>
+    <string name="start_trip">Start Trip</string>
+    <string name="pause_trip">Pause</string>
+    <string name="stop_trip">Stop</string>
+    <string name="resume_trip">Resume</string>
+    <string name="explore_city">Explore the city</string>
+    <string name="close_drawer_desc">Close</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_travel_history">Trip History</string>
+    <string name="me_marker_title">Me</string>
+    <string name="point_marker_snippet">Point</string>
+
+    // Profile Strings
+    <string name="profile_title">My Profile</string>
+    <string name="logout_button">Logout</string>
+    <string name="trips_label">Trips</string>
+    <string name="points_label">Points</string>
+    <string name="info_card_title">Information</string>
+    <string name="placeholder_new_name">New name</string>
+    <string name="save_desc">Save</string>
+    <string name="cancel_desc">Cancel</string>
+    <string name="edit_name_desc">Edit name</string>
+
+    // Travel History Strings
+    <string name="travel_history_title">Trip History</string>
+    <string name="empty_trips_title">No trips yet</string>
+    <string name="empty_trips_subtitle">When you make trips, they will appear here.</string>
+    <string name="travel_summary_subtitle">Summary of your trips</string>
+    <string name="distance_label">Distance</string>
+    <string name="details_label">Details</string>
+
+    // Trip Details Strings
+    <string name="trip_details_title">Trip Details</string>
+    <string name="share_sms_desc">Share via SMS</string>
+    <string name="trip_not_found">Trip not found.</string>
+    <string name="statistics_title">Statistics</string>
+    <string name="duration_label">Duration</string>
+    <string name="map_unavailable">Route map unavailable</string>
+    <string name="share_trip_message">I just finished a trip on ReadyToMove! 🏃‍♂️\n\n📅 Date: %1$s\n📏 Distance: %2$s\n⏱️ Duration: %3$s\n⭐ Points: %4$d pts\n\nCome explore the city with me!</string>
 </resources>

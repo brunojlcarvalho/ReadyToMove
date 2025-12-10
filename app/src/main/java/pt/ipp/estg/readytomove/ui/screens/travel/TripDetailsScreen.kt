@@ -27,9 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.data.model.Trip
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 
@@ -57,10 +59,10 @@ fun TripDetailsScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Detalhes da Viagem") },
+                title = { Text(stringResource(R.string.trip_details_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
                 },
                 actions = {
@@ -68,7 +70,7 @@ fun TripDetailsScreen(
                         IconButton(onClick = { shareTripViaSMS(context, trip) }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "Partilhar por SMS"
+                                contentDescription = stringResource(R.string.share_sms_desc)
                             )
                         }
                     }
@@ -87,7 +89,7 @@ fun TripDetailsScreen(
                 if (trips.isEmpty()) {
                     CircularProgressIndicator()
                 } else {
-                    Text("Viagem não encontrada.")
+                    Text(stringResource(R.string.trip_not_found))
                 }
             }
         } else {
@@ -101,16 +103,15 @@ fun TripDetailsScreen(
 }
 
 private fun shareTripViaSMS(context: Context, trip: Trip) {
-    val message = """
-        Acabei de fazer uma viagem no ReadyToMove! 🏃‍♂️
-        
-        📅 Data: ${trip.date}
-        📏 Distância: ${String.format("%.2f km", trip.distanceKm)}
-        ⏱️ Duração: ${trip.duration}
-        ⭐ Pontos: ${trip.points} pts
-        
-        Vem explorar a cidade comigo!
-    """.trimIndent()
+    val distanceStr = String.format("%.2f km", trip.distanceKm)
+
+    val message = context.getString(
+        R.string.share_trip_message,
+        trip.date,
+        distanceStr,
+        trip.duration,
+        trip.points
+    )
 
     val intent = Intent(Intent.ACTION_SENDTO).apply {
         data = Uri.parse("smsto:")
@@ -140,7 +141,7 @@ private fun TripDetailsContent(
         PointsHeaderCard(points = trip.points, date = trip.date)
 
         Text(
-            "Estatísticas",
+            stringResource(R.string.statistics_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -148,14 +149,14 @@ private fun TripDetailsContent(
         if (isTablet) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DetailCard(
-                    title = "Distância",
+                    title = stringResource(R.string.distance_label),
                     value = String.format("%.2f km", trip.distanceKm),
                     icon = Icons.Default.Straighten,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
                 DetailCard(
-                    title = "Duração",
+                    title = stringResource(R.string.duration_label),
                     value = trip.duration,
                     icon = Icons.Default.Timer,
                     color = MaterialTheme.colorScheme.secondary,
@@ -164,14 +165,14 @@ private fun TripDetailsContent(
             }
         } else {
             DetailCard(
-                title = "Distância",
+                title = stringResource(R.string.distance_label),
                 value = String.format("%.2f km", trip.distanceKm),
                 icon = Icons.Default.Straighten,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth()
             )
             DetailCard(
-                title = "Duração",
+                title = stringResource(R.string.duration_label),
                 value = trip.duration,
                 icon = Icons.Default.Timer,
                 color = MaterialTheme.colorScheme.secondary,
@@ -188,7 +189,7 @@ private fun TripDetailsContent(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(8.dp))
-                    Text("Mapa da rota indisponível", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.map_unavailable), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -235,7 +236,7 @@ private fun PointsHeaderCard(points: Int, date: String) {
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "$points Pontos",
+                    text = "$points ${stringResource(R.string.points_label)}",
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White

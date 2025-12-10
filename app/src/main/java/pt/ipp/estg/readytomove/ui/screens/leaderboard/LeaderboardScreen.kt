@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,7 @@ import coil.compose.AsyncImage
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.LeaderboardViewModel
 import pt.ipp.estg.readytomove.data.model.LeaderboardEntry
 
@@ -84,13 +86,16 @@ fun LeaderboardScreen(navController: NavHostController, windowSizeClass: WindowS
             LargeTopAppBar(
                 title = {
                     Text(
-                        "Leaderboard",
+                        stringResource(R.string.leaderboard_title),
                         fontSize = MaterialTheme.typography.headlineMedium.fontSize * titleScale
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -192,7 +197,7 @@ private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScal
             ) {
                 Column {
                     Text(
-                        "Top Utilizadores",
+                        stringResource(R.string.top_users_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -200,7 +205,7 @@ private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScal
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "Quem está a liderar esta semana",
+                        stringResource(R.string.top_users_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                     )
@@ -299,7 +304,7 @@ private fun RowScope.PodiumCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                "${entry.points} pts",
+                "${entry.points} ${stringResource(R.string.points_abbrev)}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -369,7 +374,7 @@ private fun LeaderboardRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "${entry.points} pts",
+                    "${entry.points} ${stringResource(R.string.points_abbrev)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

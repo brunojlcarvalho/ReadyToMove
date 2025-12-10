@@ -11,12 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
 
@@ -72,6 +74,8 @@ private fun LoginScreenLayout(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     val contentWidthFraction = when {
         isTablet -> 0.5f
         isPortraitPhone -> 0.9f
@@ -116,7 +120,7 @@ private fun LoginScreenLayout(
 
         Image(
             painter = painterResource(id = R.drawable.readytomove_symbol),
-            contentDescription = "Logo ReadyToMove",
+            contentDescription = stringResource(R.string.app_name),
             modifier = Modifier
                 .fillMaxWidth(contentWidthFraction)
                 .height(logoHeight),
@@ -126,7 +130,7 @@ private fun LoginScreenLayout(
         Spacer(Modifier.height(spacingLarge))
 
         Text(
-            text = "ReadyToMove",
+            text = stringResource(R.string.app_name),
             fontSize = titleFontSize,
             fontWeight = FontWeight.Bold
         )
@@ -140,7 +144,7 @@ private fun LoginScreenLayout(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.email_label), fontSize = fieldFontSize) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -148,7 +152,7 @@ private fun LoginScreenLayout(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.password_label), fontSize = fieldFontSize) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -159,7 +163,7 @@ private fun LoginScreenLayout(
             Button(
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
-                        errorMessage = "Preenche todos os campos"
+                        errorMessage = context.getString(R.string.error_fill_fields)
                         return@Button
                     }
                     isLoading = true
@@ -169,7 +173,7 @@ private fun LoginScreenLayout(
                             errorMessage = null
                             onLoginSuccess()
                         } else {
-                            errorMessage = error ?: "Erro ao iniciar sessão"
+                            errorMessage = context.getString(R.string.error_to_login)
                         }
                     }
                 },
@@ -183,7 +187,7 @@ private fun LoginScreenLayout(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Iniciar Sessão", fontSize = buttonFontSize)
+                    Text(stringResource(R.string.login_button), fontSize = buttonFontSize)
                 }
             }
 
@@ -195,7 +199,7 @@ private fun LoginScreenLayout(
             Spacer(Modifier.height(12.dp))
 
             TextButton(onClick = onRegisterClick) {
-                Text("Criar conta", fontSize = if (isTablet) 16.sp else 14.sp)
+                Text(stringResource(R.string.create_account), fontSize = if (isTablet) 16.sp else 14.sp)
             }
         }
     }

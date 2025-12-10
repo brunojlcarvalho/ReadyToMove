@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadyToMove</string>
+
+    // Login Strings
+    <string name="login_title">Iniciar Sessão</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Entrar</string>
+    <string name="create_account">Criar conta</string>
+    <string name="error_fill_fields">Preenche todos os campos</string>
+    <string name="error_to_login">Erro ao iniciar sessão</string>
+
+    // Register Strings
+    <string name="name_label">Nome</string>
+    <string name="confirm_password_label">Confirmar Password</string>
+    <string name="error_password_short">Password muito curta</string>
+    <string name="error_passwords_match">Passwords não coincidem</string>
+    <string name="error_registering">Erro ao registar</string>
+    <string name="already_have_account">Já tenho conta</string>
+
+    // Leaderboard Strings
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="back_description">Voltar</string>
+    <string name="top_users_title">Top Utilizadores</string>
+    <string name="top_users_subtitle">Quem está a liderar esta semana</string>
+    <string name="points_abbrev">pts</string>
+
+    // Map Strings
+    <string name="menu_desc">Menu</string>
+    <string name="center_map_desc">Centrar</string>
+    <string name="night_mode_sensor">Modo Noturno (Sensor de Luz)</string>
+    <string name="start_trip">Iniciar Viagem</string>
+    <string name="pause_trip">Pausar</string>
+    <string name="stop_trip">Parar</string>
+    <string name="resume_trip">Retomar</string>
+    <string name="explore_city">Explora a cidade</string>
+    <string name="close_drawer_desc">Fechar</string>
+    <string name="nav_map">Mapa</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_travel_history">Histórico de Viagens</string>
+    <string name="me_marker_title">Eu</string>
+    <string name="point_marker_snippet">Ponto</string>
+
+    // Profile Strings
+    <string name="profile_title">O meu Perfil</string>
+    <string name="logout_button">Terminar sessão</string>
+    <string name="trips_label">Viagens</string>
+    <string name="points_label">Pontos</string>
+    <string name="info_card_title">Informações</string>
+    <string name="placeholder_new_name">Novo nome</string>
+    <string name="save_desc">Guardar</string>
+    <string name="cancel_desc">Cancelar</string>
+    <string name="edit_name_desc">Editar nome</string>
+
+    // Travel History Strings
+    <string name="travel_history_title">Histórico de Viagens</string>
+    <string name="empty_trips_title">Sem viagens ainda</string>
+    <string name="empty_trips_subtitle">Quando fizeres viagens, aparecem aqui.</string>
+    <string name="travel_summary_subtitle">Resumo das tuas viagens</string>
+    <string name="distance_label">Distância</string>
+    <string name="details_label">Detalhes</string>
+
+    <string name="trip_details_title">Detalhes da Viagem</string>
+    <string name="share_sms_desc">Partilhar por SMS</string>
+    <string name="trip_not_found">Viagem não encontrada.</string>
+    <string name="statistics_title">Estatísticas</string>
+    <string name="duration_label">Duração</string>
+    <string name="map_unavailable">Mapa da rota indisponível</string>
+    <string name="share_trip_message">Acabei de fazer uma viagem no ReadyToMove! 🏃‍♂️\n\n📅 Data: %1$s\n📏 Distância: %2$s\n⏱️ Duração: %3$s\n⭐ Pontos: %4$d pts\n\nVem explorar a cidade comigo!</string>
+</resources>
