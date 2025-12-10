@@ -208,7 +208,7 @@ fun MapScreen(
             }
         )
     }
-    val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false)) }
+    val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)) }
 
     val defaultPosition = LatLng(41.367, -8.194)
     val cameraPositionState = rememberCameraPositionState {
