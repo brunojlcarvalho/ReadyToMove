@@ -112,6 +112,7 @@ fun MapScreen(
     var hasPermission by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var tripState by remember { mutableStateOf(TripState.IDLE) }
+    var hasCenteredOnUser by remember { mutableStateOf(false) }
 
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
@@ -290,7 +291,14 @@ fun MapScreen(
                         )
 
                         LaunchedEffect(it) {
-                            if (tripState == TripState.RUNNING) {
+                            if (!hasCenteredOnUser) {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f),
+                                    durationMs = 1000
+                                )
+                                hasCenteredOnUser = true
+                            }
+                            else if (tripState == TripState.RUNNING) {
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLng(userLatLng),
                                     durationMs = 500
