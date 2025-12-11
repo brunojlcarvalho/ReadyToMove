@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadyToMove</string>
+
+    // Login Screen Strings
+    <string name="login_title">Accedi</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Entra</string>
+    <string name="create_account">Crea account</string>
+    <string name="error_fill_fields">Compila tutti i campi</string>
+    <string name="error_to_login">Errore durante l\'accesso</string>
+
+    // Register Screen Strings
+    <string name="name_label">Nome</string>
+    <string name="confirm_password_label">Conferma password</string>
+    <string name="error_password_short">Password troppo corta</string>
+    <string name="error_passwords_match">Le password non corrispondono</string>
+    <string name="error_registering">Errore di registrazione</string>
+    <string name="already_have_account">Ho già un account</string>
+
+    // Leaderboard Screen Strings
+    <string name="leaderboard_title">Classifica</string>
+    <string name="back_description">Indietro</string>
+    <string name="top_users_title">Migliori Utenti</string>
+    <string name="top_users_subtitle">Chi è in testa questa settimana</string>
+    <string name="points_abbrev">pt</string>
+
+    // Map Screen Strings
+    <string name="menu_desc">Menu</string>
+    <string name="center_map_desc">Centra</string>
+    <string name="night_mode_sensor">Modalità Notte (Sensore Luce)</string>
+    <string name="start_trip">Inizia Viaggio</string>
+    <string name="pause_trip">Pausa</string>
+    <string name="stop_trip">Ferma</string>
+    <string name="resume_trip">Riprendi</string>
+    <string name="explore_city">Esplora la città</string>
+    <string name="close_drawer_desc">Chiudi</string>
+    <string name="nav_map">Mappa</string>
+    <string name="nav_profile">Profilo</string>
+    <string name="nav_travel_history">Cronologia Viaggi</string>
+    <string name="me_marker_title">Io</string>
+    <string name="point_marker_snippet">Punto</string>
+
+    // Profile Screen Strings
+    <string name="profile_title">Il mio profilo</string>
+    <string name="logout_button">Esci</string>
+    <string name="trips_label">Viaggi</string>
+    <string name="points_label">Punti</string>
+    <string name="info_card_title">Informazioni</string>
+    <string name="placeholder_new_name">Nuovo nome</string>
+    <string name="save_desc">Salva</string>
+    <string name="cancel_desc">Annulla</string>
+    <string name="edit_name_desc">Modifica nome</string>
+
+    // Travel History Screen Strings
+    <string name="travel_history_title">Cronologia Viaggi</string>
+    <string name="empty_trips_title">Nessun viaggio ancora</string>
+    <string name="empty_trips_subtitle">Quando farai dei viaggi, appariranno qui.</string>
+    <string name="travel_summary_subtitle">Riepilogo dei tuoi viaggi</string>
+    <string name="distance_label">Distanza</string>
+    <string name="details_label">Dettagli</string>
+
+    // Trip Details Screen Strings
+    <string name="trip_details_title">Dettagli Viaggio</string>
+    <string name="share_sms_desc">Condividi via SMS</string>
+    <string name="trip_not_found">Viaggio non trovato.</string>
+    <string name="statistics_title">Statistiche</string>
+    <string name="duration_label">Durata</string>
+    <string name="map_unavailable">Mappa del percorso non disponibile</string>
+    <string name="share_trip_message">Ho appena finito un viaggio su ReadyToMove! 🏃‍♂️\n\n📅 Data: %1$s\n📏 Distanza: %2$s\n⏱️ Durata: %3$s\n⭐ Punti: %4$d pt\n\nVieni a esplorare la città con me!</string>
+</resources>

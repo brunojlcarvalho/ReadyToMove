@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadyToMove</string>
+
+    // Login Screen Strings
+    <string name="login_title">Anmelden</string>
+    <string name="email_label">E-Mail</string>
+    <string name="password_label">Passwort</string>
+    <string name="login_button">Einloggen</string>
+    <string name="create_account">Konto erstellen</string>
+    <string name="error_fill_fields">Bitte alle Felder ausfüllen</string>
+    <string name="error_to_login">Fehler beim Anmelden</string>
+
+    // Register Screen Strings
+    <string name="name_label">Name</string>
+    <string name="confirm_password_label">Passwort bestätigen</string>
+    <string name="error_password_short">Passwort zu kurz</string>
+    <string name="error_passwords_match">Passwörter stimmen nicht überein</string>
+    <string name="error_registering">Registrierung fehlgeschlagen</string>
+    <string name="already_have_account">Ich habe bereits ein Konto</string>
+
+    // Leaderboard Screen Strings
+    <string name="leaderboard_title">Bestenliste</string>
+    <string name="back_description">Zurück</string>
+    <string name="top_users_title">Top-Benutzer</string>
+    <string name="top_users_subtitle">Wer führt diese Woche</string>
+    <string name="points_abbrev">Pkt</string>
+
+    // Map Screen Strings
+    <string name="menu_desc">Menü</string>
+    <string name="center_map_desc">Zentrieren</string>
+    <string name="night_mode_sensor">Nachtmodus (Lichtsensor)</string>
+    <string name="start_trip">Fahrt beginnen</string>
+    <string name="pause_trip">Pausieren</string>
+    <string name="stop_trip">Beenden</string>
+    <string name="resume_trip">Fortsetzen</string>
+    <string name="explore_city">Erkunde die Stadt</string>
+    <string name="close_drawer_desc">Schließen</string>
+    <string name="nav_map">Karte</string>
+    <string name="nav_profile">Profil</string>
+    <string name="nav_travel_history">Fahrtverlauf</string>
+    <string name="me_marker_title">Ich</string>
+    <string name="point_marker_snippet">Punkt</string>
+
+    // Profile Screen Strings
+    <string name="profile_title">Mein Profil</string>
+    <string name="logout_button">Abmelden</string>
+    <string name="trips_label">Fahrten</string>
+    <string name="points_label">Punkte</string>
+    <string name="info_card_title">Informationen</string>
+    <string name="placeholder_new_name">Neuer Name</string>
+    <string name="save_desc">Speichern</string>
+    <string name="cancel_desc">Abbrechen</string>
+    <string name="edit_name_desc">Name bearbeiten</string>
+
+    // Travel History Screen Strings
+    <string name="travel_history_title">Fahrtverlauf</string>
+    <string name="empty_trips_title">Noch keine Fahrten</string>
+    <string name="empty_trips_subtitle">Wenn du Fahrten machst, erscheinen sie hier.</string>
+    <string name="travel_summary_subtitle">Zusammenfassung deiner Fahrten</string>
+    <string name="distance_label">Distanz</string>
+    <string name="details_label">Details</string>
+
+    // Trip Details Strings
+    <string name="trip_details_title">Fahrtdetails</string>
+    <string name="share_sms_desc">Per SMS teilen</string>
+    <string name="trip_not_found">Fahrt nicht gefunden.</string>
+    <string name="statistics_title">Statistiken</string>
+    <string name="duration_label">Dauer</string>
+    <string name="map_unavailable">Routenkarte nicht verfügbar</string>
+    <string name="share_trip_message">Ich habe gerade eine Fahrt mit ReadyToMove beendet! 🏃‍♂️\n\n📅 Datum: %1$s\n📏 Distanz: %2$s\n⏱️ Dauer: %3$s\n⭐ Punkte: %4$d Pkt\n\nErkunde die Stadt mit mir!</string>
+</resources>

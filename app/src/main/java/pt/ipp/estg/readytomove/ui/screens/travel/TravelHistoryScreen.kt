@@ -25,11 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
@@ -79,10 +81,10 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Histórico de Viagens") },
+                title = { Text(stringResource(R.string.travel_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -182,12 +184,12 @@ private fun SummaryHeader(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Histórico de Viagens",
+                                stringResource(R.string.travel_history_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "Resumo das tuas viagens",
+                                stringResource(R.string.travel_summary_subtitle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
@@ -195,21 +197,21 @@ private fun SummaryHeader(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatChip(
-                            label = "Viagens",
+                            label = stringResource(R.string.trips_label),
                             value = "$tripCount",
                             isTablet = isTablet,
                             modifier = Modifier.width(140.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         StatChip(
-                            label = "Distância",
+                            label = stringResource(R.string.distance_label),
                             value = String.format("%.1f km", totalKm),
                             isTablet = isTablet,
                             modifier = Modifier.width(160.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         StatChip(
-                            label = "Pontos",
+                            label = stringResource(R.string.points_label),
                             value = "$totalPoints",
                             isTablet = isTablet,
                             modifier = Modifier.width(120.dp)
@@ -228,12 +230,12 @@ private fun SummaryHeader(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Histórico de Viagens",
+                                stringResource(R.string.travel_history_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "Resumo das tuas viagens",
+                                stringResource(R.string.travel_summary_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
@@ -241,19 +243,19 @@ private fun SummaryHeader(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatChip(
-                            label = "Viagens",
+                            label = stringResource(R.string.trips_label),
                             value = "$tripCount",
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
                         )
                         StatChip(
-                            label = "Distância",
+                            label = stringResource(R.string.distance_label),
                             value = String.format("%.1f km", totalKm),
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
                         )
                         StatChip(
-                            label = "Pontos",
+                            label = stringResource(R.string.points_label),
                             value = "$totalPoints",
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
@@ -368,10 +370,8 @@ private fun TripCard(
             Column(horizontalAlignment = Alignment.End) {
                 PointsPill(points = points, isTablet = isTablet)
                 Spacer(Modifier.height(6.dp))
-                // Opcional: Podes remover o "Detalhes" se não tiveres ecrã de detalhes
-                // ou mantê-lo como está.
                 Text(
-                    "Detalhes",
+                    stringResource(R.string.details_label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -402,7 +402,7 @@ private fun PointsPill(points: Int, isTablet: Boolean) {
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                "$points pts",
+                "$points ${stringResource(R.string.points_abbrev)}",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -424,12 +424,12 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "Sem viagens ainda",
+                stringResource(R.string.empty_trips_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Quando fizeres viagens, aparecem aqui.",
+                stringResource(R.string.empty_trips_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -463,8 +463,6 @@ private fun fakeWindowSizeClass(
 private fun TravelHistoryScreenPreview_Phone() {
     val nav = rememberNavController()
     MaterialTheme {
-        // Nota: O preview pode não funcionar perfeito sem o ViewModel injetado,
-        // mas para UI testing funciona se isolares o conteúdo.
         TravelHistoryScreen(
             navController = nav,
             windowSizeClass = fakeWindowSizeClass(

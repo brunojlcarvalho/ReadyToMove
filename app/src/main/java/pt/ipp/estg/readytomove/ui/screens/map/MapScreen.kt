@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -111,6 +112,7 @@ fun MapScreen(
     var hasPermission by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var tripState by remember { mutableStateOf(TripState.IDLE) }
+    var hasCenteredOnUser by remember { mutableStateOf(false) }
 
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
@@ -207,7 +209,7 @@ fun MapScreen(
             }
         )
     }
-    val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false)) }
+    val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)) }
 
     val defaultPosition = LatLng(41.367, -8.194)
     val cameraPositionState = rememberCameraPositionState {
@@ -250,7 +252,7 @@ fun MapScreen(
                         ) {
                             Icon(
                                 Icons.Default.Menu,
-                                contentDescription = "Menu",
+                                contentDescription = stringResource(R.string.menu_desc),
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(topBarIconSize)
                             )
@@ -282,14 +284,21 @@ fun MapScreen(
 
                         Marker(
                             state = MarkerState(position = userLatLng),
-                            title = "Eu",
+                            title = stringResource(R.string.me_marker_title),
                             anchor = Offset(0.5f, 0.5f),
                             icon = bitmapDescriptorFromVectorOriginal(context, R.drawable.ic_user_puck),
                             zIndex = 1.0f
                         )
 
                         LaunchedEffect(it) {
-                            if (tripState == TripState.RUNNING) {
+                            if (!hasCenteredOnUser) {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f),
+                                    durationMs = 1000
+                                )
+                                hasCenteredOnUser = true
+                            }
+                            else if (tripState == TripState.RUNNING) {
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLng(userLatLng),
                                     durationMs = 500
@@ -297,6 +306,7 @@ fun MapScreen(
                             }
                         }
                     }
+                    val pointPrefix = stringResource(R.string.point_marker_snippet)
                     operatorPoints.forEachIndexed { i, op ->
                         val iconRes = when (op.type.name) {
                             "BUS" -> R.drawable.ic_bus
@@ -320,7 +330,7 @@ fun MapScreen(
                         Marker(
                             state = MarkerState(LatLng(op.lat, op.lon)),
                             title = op.name,
-                            snippet = "Ponto ${i + 1}",
+                            snippet = "$pointPrefix ${i + 1}",
                             icon = bitmapDescriptorFromVector(context, iconRes, markerColor, 0.1f)
                         )
                     }
@@ -349,7 +359,7 @@ fun MapScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MyLocation,
-                        contentDescription = "Centrar",
+                        contentDescription = stringResource(R.string.center_map_desc),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -374,7 +384,7 @@ fun MapScreen(
                             ) {
                                 Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Modo Noturno (Sensor de Luz)", fontSize = 12.sp)
+                                Text(stringResource(R.string.night_mode_sensor), fontSize = 12.sp)
                             }
                         }
                     }
@@ -387,7 +397,7 @@ fun MapScreen(
                                 },
                                 modifier = Modifier.height(bottomButtonHeight)
                             ) {
-                                Text("Iniciar Viagem", fontSize = mapButtonFontSize)
+                                Text(stringResource(R.string.start_trip), fontSize = mapButtonFontSize)
                             }
                         }
                         TripState.RUNNING -> {
@@ -398,7 +408,7 @@ fun MapScreen(
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text("Pausar", fontSize = mapButtonFontSize)
+                                    Text(stringResource(R.string.pause_trip), fontSize = mapButtonFontSize)
                                 }
                                 Button(
                                     onClick = {
@@ -406,7 +416,7 @@ fun MapScreen(
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text("Parar", fontSize = mapButtonFontSize)
+                                    Text(stringResource(R.string.stop_trip), fontSize = mapButtonFontSize)
                                 }
                             }
                         }
@@ -415,7 +425,7 @@ fun MapScreen(
                                 onClick = { tripState = TripState.RUNNING },
                                 modifier = Modifier.height(bottomButtonHeight)
                             ) {
-                                Text("Retomar", fontSize = mapButtonFontSize)
+                                Text(stringResource(R.string.resume_trip), fontSize = mapButtonFontSize)
                             }
                         }
                     }
@@ -467,12 +477,12 @@ private fun AppDrawer(
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(
-                        "ReadyToMove",
+                        stringResource(R.string.app_name),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Text(
-                        "Explora a cidade",
+                        stringResource(R.string.explore_city),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                     )
@@ -480,32 +490,32 @@ private fun AppDrawer(
             }
 
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd)) {
-                Icon(Icons.Default.Close, contentDescription = "Fechar", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_drawer_desc), tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
         NavigationDrawerItem(
-            label = { Text("Mapa") },
+            label = { Text(stringResource(R.string.nav_map)) },
             selected = false,
             onClick = { onNavigate("map") },
             icon = { Icon(Icons.Default.MyLocation, contentDescription = null) }
         )
         NavigationDrawerItem(
-            label = { Text("Perfil") },
+            label = { Text(stringResource(R.string.nav_profile)) },
             selected = false,
             onClick = { onNavigate("profile") },
             icon = { Icon(Icons.Default.Person, contentDescription = null) }
         )
         NavigationDrawerItem(
-            label = { Text("Leaderboard") },
+            label = { Text(stringResource(R.string.leaderboard_title)) },
             selected = false,
             onClick = { onNavigate("leaderboard") },
             icon = { Icon(Icons.Default.EmojiEvents, contentDescription = null) }
         )
         NavigationDrawerItem(
-            label = { Text("Histórico de Viagens") },
+            label = { Text(stringResource(R.string.nav_travel_history)) },
             selected = false,
             onClick = { onNavigate("travel_history") },
             icon = { Icon(Icons.Default.History, contentDescription = null) }
@@ -523,6 +533,7 @@ private fun AppDrawer(
     }
 }
 
+// ... (ThemeToggle, fakeWindowSizeClass e Previews mantêm-se iguais)
 @Composable
 private fun ThemeToggle(
     isDark: Boolean,

@@ -11,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,6 +74,8 @@ private fun RegisterScreenLayout(
     onRegisterSuccess: () -> Unit,
     onLoginClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     val contentWidthFraction = when {
         isTablet -> 0.5f
         isPortraitPhone -> 0.9f
@@ -118,7 +122,7 @@ private fun RegisterScreenLayout(
 
         Image(
             painter = painterResource(id = R.drawable.readytomove_symbol),
-            contentDescription = "Logo ReadyToMove",
+            contentDescription = stringResource(R.string.app_name),
             modifier = Modifier
                 .fillMaxWidth(contentWidthFraction)
                 .height(logoHeight),
@@ -127,8 +131,9 @@ private fun RegisterScreenLayout(
 
         Spacer(Modifier.height(spacingLarge))
 
+        // "Criar Conta"
         Text(
-            text = "Criar Conta",
+            text = stringResource(R.string.create_account),
             fontSize = titleFontSize,
             fontWeight = FontWeight.Bold
         )
@@ -142,7 +147,7 @@ private fun RegisterScreenLayout(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.name_label), fontSize = fieldFontSize) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -150,7 +155,7 @@ private fun RegisterScreenLayout(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.email_label), fontSize = fieldFontSize) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -158,7 +163,7 @@ private fun RegisterScreenLayout(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.password_label), fontSize = fieldFontSize) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -167,7 +172,7 @@ private fun RegisterScreenLayout(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirmar Password", fontSize = fieldFontSize) },
+                label = { Text(stringResource(R.string.confirm_password_label), fontSize = fieldFontSize) },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -178,15 +183,15 @@ private fun RegisterScreenLayout(
             Button(
                 onClick = {
                     if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-                        errorMessage = "Preenche todos os campos"
+                        errorMessage = context.getString(R.string.error_fill_fields)
                         return@Button
                     }
                     if (password.length < 6) {
-                        errorMessage = "Password muito curta"
+                        errorMessage = context.getString(R.string.error_password_short)
                         return@Button
                     }
                     if (password != confirmPassword) {
-                        errorMessage = "Passwords não coincidem"
+                        errorMessage = context.getString(R.string.error_passwords_match)
                         return@Button
                     }
                     isLoading = true
@@ -196,7 +201,7 @@ private fun RegisterScreenLayout(
                             errorMessage = null
                             onRegisterSuccess()
                         } else {
-                            errorMessage = error ?: "Erro ao registar"
+                            errorMessage = error ?: context.getString(R.string.error_registering)
                         }
                     }
                 },
@@ -210,7 +215,7 @@ private fun RegisterScreenLayout(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Criar Conta", fontSize = buttonFontSize)
+                    Text(stringResource(R.string.create_account), fontSize = buttonFontSize)
                 }
             }
 
@@ -222,7 +227,7 @@ private fun RegisterScreenLayout(
             Spacer(Modifier.height(12.dp))
 
             TextButton(onClick = onLoginClick) {
-                Text("Já tenho conta", fontSize = if (isTablet) 16.sp else 14.sp)
+                Text(stringResource(R.string.already_have_account), fontSize = if (isTablet) 16.sp else 14.sp)
             }
         }
     }

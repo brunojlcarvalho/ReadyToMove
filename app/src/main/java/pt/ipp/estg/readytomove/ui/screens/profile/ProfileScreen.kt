@@ -22,6 +22,9 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -32,23 +35,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
-import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
-import androidx.compose.ui.unit.Dp
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.unit.DpSize
-import kotlin.text.compareTo
-import kotlin.unaryMinus
+import coil.compose.AsyncImage
+import pt.ipp.estg.readytomove.R
+import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,10 +67,10 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 LargeTopAppBar(
-                    title = { Text("O meu Perfil") },
+                    title = { Text(stringResource(R.string.profile_title)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                         }
                     },
                     scrollBehavior = scrollBehavior
@@ -86,7 +87,6 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             }
         }
     } else {
-        // Chama o Scaffold que já tinhas (não precisas de alterar o ProfileScreenScaffold abaixo)
         ProfileScreenScaffold(
             windowSizeClass = windowSizeClass,
             userName = user!!.name,
@@ -119,7 +119,6 @@ private fun ProfileScreenScaffold(
     onUpdateName: (String) -> Unit,
     onLogout: () -> Unit
 ) {
-    // (mantém cálculos anteriores: widthClass, isTablet, pagePadding, etc.)
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
@@ -170,10 +169,10 @@ private fun ProfileScreenScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("O meu Perfil") },
+                title = { Text(stringResource(R.string.profile_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -185,7 +184,6 @@ private fun ProfileScreenScaffold(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Header full-width (sem padding horizontal externo)
             ProfileHeader(
                 name = userName,
                 email = userEmail,
@@ -213,7 +211,6 @@ private fun ProfileScreenScaffold(
                 isTablet = isTablet
             )
 
-            // Conteúdo scrollável com padding lateral
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -234,12 +231,12 @@ private fun ProfileScreenScaffold(
                                 cardHeight = statCardHeight
                             )
                             ProfileInfoCard(
-                                title = "Informações",
+                                title = stringResource(R.string.info_card_title),
                                 rows = listOf(
-                                    InfoRowData("Nome", userName),
-                                    InfoRowData("Email", userEmail),
-                                    InfoRowData("Viagens", totalTrips.toString()),
-                                    InfoRowData("Pontos", points.toString())
+                                    InfoRowData(stringResource(R.string.name_label), userName),
+                                    InfoRowData(stringResource(R.string.email_label), userEmail),
+                                    InfoRowData(stringResource(R.string.trips_label), totalTrips.toString()),
+                                    InfoRowData(stringResource(R.string.points_label), points.toString())
                                 ),
                                 modifier = Modifier.weight(1f)
                             )
@@ -253,12 +250,12 @@ private fun ProfileScreenScaffold(
                         )
                         Spacer(Modifier.height(12.dp))
                         ProfileInfoCard(
-                            title = "Informações",
+                            title = stringResource(R.string.info_card_title),
                             rows = listOf(
-                                InfoRowData("Nome", userName),
-                                InfoRowData("Email", userEmail),
-                                InfoRowData("Viagens", totalTrips.toString()),
-                                InfoRowData("Pontos", points.toString())
+                                InfoRowData(stringResource(R.string.name_label), userName),
+                                InfoRowData(stringResource(R.string.email_label), userEmail),
+                                InfoRowData(stringResource(R.string.trips_label), totalTrips.toString()),
+                                InfoRowData(stringResource(R.string.points_label), points.toString())
                             )
                         )
                     }
@@ -278,7 +275,7 @@ private fun ProfileScreenScaffold(
                     ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Terminar sessão", fontSize = if (isTablet) 18.sp else 14.sp)
+                        Text(stringResource(R.string.logout_button), fontSize = if (isTablet) 18.sp else 14.sp)
                     }
                 }
             }
@@ -387,14 +384,14 @@ private fun ProfileHeader(
                             ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { onSaveEdit() }),
-                            placeholder = { Text("Novo nome") }
+                            placeholder = { Text(stringResource(R.string.placeholder_new_name)) }
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onSaveEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Guardar", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.save_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onCancelEdit) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = "Cancelar", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.ExitToApp, contentDescription = stringResource(R.string.cancel_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 } else {
@@ -409,7 +406,7 @@ private fun ProfileHeader(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onStartEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar nome", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_name_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -439,14 +436,14 @@ private fun ProfileStatsSection(
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         StatCard(
-            title = "Pontos",
+            title = stringResource(R.string.points_label),
             value = points.toString(),
             icon = Icons.Default.Star,
             modifier = Modifier.weight(1f),
             cardHeight = cardHeight
         )
         StatCard(
-            title = "Viagens",
+            title = stringResource(R.string.trips_label),
             value = trips.toString(),
             icon = Icons.Default.History,
             modifier = Modifier.weight(1f),
@@ -544,7 +541,6 @@ fun StatCard(
     }
 }
 
-/* ------- Adições mínimas para Preview ------- */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(
