@@ -14,6 +14,14 @@ import pt.ipp.estg.readytomove.data.model.Trip
 import pt.ipp.estg.readytomove.data.model.local.TripCache
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
 
+/**
+ * ViewModel responsible for managing and displaying the user's travel history.
+ *
+ * It combines local data (Room) with real-time updates from the Cloud (Firestore)
+ * to ensure the trip list is always up-to-date.
+ *
+ * @param application The application context.
+ */
 class TravelHistoryViewModel(application: Application) : AndroidViewModel(application) {
 
     private val localRepository = LocalRepository.getInstance(application)
@@ -23,6 +31,10 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
     val trips: StateFlow<List<Trip>> = _trips
     private var listenerRegistration: ListenerRegistration? = null
 
+    /**
+     * Loads trips for the currently logged-in user.
+     * Initiates observation of the local database and starts real-time synchronization with Firestore.
+     */
     fun loadUserTrips() {
         val userId = auth.currentUser?.uid
 
@@ -31,25 +43,32 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
             return
         }
 
+        // Observe local database
         viewModelScope.launch {
             localRepository.observeTripsForUser(userId).collect { userTrips ->
                 _trips.value = userTrips
             }
         }
 
-        // Subscrever alterações na Cloud (Firestore) em Tempo Real
+        // Subscribe to changes in Cloud (Firestore) in Real-Time
         startRealTimeSync(userId)
     }
 
+    /**
+     * Starts listening for trip updates in Firestore for the specific user.
+     * New or updated trips found in Firestore are automatically saved to the local database.
+     *
+     * @param userId The ID of the user whose trips to sync.
+     */
     private fun startRealTimeSync(userId: String) {
-        // Se já existir um listener ativo, removemos para evitar duplicados
+        // If an active listener exists, remove it to avoid duplicates
         listenerRegistration?.remove()
 
         val query = db.collection("trips").whereEqualTo("userId", userId)
 
         listenerRegistration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                Log.e("TravelHistory", "Erro ao sincronizar viagens: ${error.message}")
+                Log.e("TravelHistory", "Error syncing trips: ${error.message}")
                 return@addSnapshotListener
             }
 
@@ -76,7 +95,7 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                     } catch (e: Exception) { null }
                 }
 
-                Log.d("TravelHistory", "Recebidas ${remoteTrips.size} viagens em tempo real.")
+                Log.d("TravelHistory", "Received ${remoteTrips.size} trips in real-time.")
 
                 if (remoteTrips.isNotEmpty()) {
                     viewModelScope.launch {
@@ -87,6 +106,12 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    /**
+     * Retrieves a specific trip by its ID from the current list.
+     *
+     * @param tripId The ID of the trip to find.
+     * @return The Trip object if found, null otherwise.
+     */
     fun getTripById(tripId: String): Trip? {
         return _trips.value.find { it.id == tripId }
     }

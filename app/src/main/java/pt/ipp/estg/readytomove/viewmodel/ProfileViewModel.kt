@@ -12,6 +12,14 @@ import kotlinx.coroutines.tasks.await
 import pt.ipp.estg.readytomove.data.model.User
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
 
+/**
+ * ViewModel responsible for managing User Profile data.
+ *
+ * This ViewModel handles loading user data from local cache and synchronizing it
+ * with Firebase Firestore. It also manages updating user details like name and avatar.
+ *
+ * @param application The application context.
+ */
 class ProfileViewModel(application: Application) : AndroidViewModel(application) {
 
     private val auth = FirebaseAuth.getInstance()
@@ -25,33 +33,40 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         loadUserData()
     }
 
+    /**
+     * Triggers a refresh of the user data.
+     */
     fun refreshUserData() {
         loadUserData()
     }
 
+    /**
+     * Loads the user data from local repository first, then fetches the latest
+     * data from Firebase Firestore.
+     */
     private fun loadUserData() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
-                // 1. Primeiro carrega o que temos localmente (Instantâneo)
+                // 1. First load what we have locally (Instant display)
                 val cachedUser = localRepository.getUser(uid)
                 cachedUser?.let { _user.value = it }
 
-                // 2. Sincronizar com Firebase (Vai buscar os dados reais à cloud)
+                // 2. Synchronize with Firebase (Fetch real data from cloud)
                 try {
                     val snapshot = db.collection("users").document(uid).get().await()
                     val remoteUser = snapshot.toObject(User::class.java)
 
-                    // Se encontrarmos o user na cloud, atualizamos a cache local e a UI
+                    // If user is found in cloud, update local cache and UI
                     if (remoteUser != null) {
-                        // Garantir que o ID está correto caso o objeto venha sem ID
+                        // Ensure ID is correct if object comes without it
                         val finalUser = remoteUser.copy(id = uid)
 
                         localRepository.saveUser(finalUser)
                         _user.value = finalUser
                     }
                 } catch (e: Exception) {
-                    // Se falhar a net, continuamos a mostrar os dados locais silenciosamente
+                    // If network fails, silently continue showing local data
                     e.printStackTrace()
                 }
 
@@ -61,6 +76,11 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /**
+     * Updates the user's name in both Firestore and local database.
+     *
+     * @param newName The new name to set.
+     */
     fun updateName(newName: String) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
@@ -81,16 +101,21 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /**
+     * Updates the user's avatar URL in both Firestore and local database.
+     *
+     * @param uri The string URI of the new avatar image.
+     */
     fun updateAvatar(uri: String) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
-                // Atualizar no Firebase
+                // Update Firebase
                 db.collection("users").document(uid)
                     .update("avatarUrl", uri)
                     .await()
 
-                // Atualizar Localmente
+                // Update Local
                 val updatedUser = _user.value?.copy(avatarUrl = uri)
                 if (updatedUser != null) {
                     _user.value = updatedUser
@@ -102,6 +127,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /**
+     * Logs out the current user.
+     */
     fun logout() {
         viewModelScope.launch {
             auth.signOut()

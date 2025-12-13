@@ -33,6 +33,17 @@ import pt.ipp.estg.readytomove.service.LocationService
 import pt.ipp.estg.readytomove.R
 import java.util.Date
 
+/**
+ * ViewModel for the Map screen.
+ *
+ * It handles:
+ * - User location tracking via FusedLocationProviderClient.
+ * - Managing active trips (start, stop, calculate distance).
+ * - Fetching nearby operator points (bus stops, bike stations) from GeoApify.
+ * - Communicating with the foreground LocationService.
+ *
+ * @param application The application context.
+ */
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private val fusedLocationClient: FusedLocationProviderClient =
@@ -42,6 +53,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
+    // StateFlows for UI state
     private val _currentLocation = MutableStateFlow<Location?>(null)
     val currentLocation: StateFlow<Location?> = _currentLocation
 
@@ -57,6 +69,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private val _isTrackingState = MutableStateFlow(false)
     val isTrackingState: StateFlow<Boolean> = _isTrackingState
 
+    // Internal state variables
     private var isTracking = false
     private var tripStartTime: Long = 0
     private var startPointType: OperatorType? = null
@@ -64,16 +77,19 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private var locationCallback: LocationCallback? = null
     private var simulationJob: Job? = null
 
+    // GeoApify API setup
     private val geoapifyDataSource = GeoApifyDataSource(
         retrofit = RetrofitHelper.retrofit("https://api.geoapify.com/"),
         apiKey = "18d9603dbce24498a3959b908acfa516"
     )
     private val repository = GeoApifyRepository(geoapifyDataSource)
 
+    // Location request configuration
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 4000)
         .setMinUpdateIntervalMillis(2000)
         .build()
 
+    // BroadcastReceiver to get updates from the background LocationService
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == LocationService.ACTION_LOCATION_UPDATE) {
@@ -89,6 +105,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        // Register the BroadcastReceiver
         val filter = IntentFilter(LocationService.ACTION_LOCATION_UPDATE)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -112,6 +129,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Starts requesting location updates directly using FusedLocationProviderClient.
+     * This is typically used when not in an active trip to show user location on the map.
+     */
     @SuppressLint("MissingPermission")
     fun startLocationUpdates() {
         if (locationCallback != null) return
@@ -133,6 +154,12 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
+    /**
+     * Initiates a trip.
+     *
+     * Validates that the user has a GPS signal and is near a valid operator point (Bus/Bike).
+     * If valid, it starts the foreground [LocationService] and updates the tracking state.
+     */
     fun startTrip() {
         val currentLoc = _currentLocation.value
 
@@ -155,6 +182,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         _isTrackingState.value = true
         _uiMessage.value = getApplication<Application>().getString(R.string.trip_started_at, nearestPoint.name)
 
+        // Stop local updates as the service will now handle them
         stopLocalLocationUpdates()
 
         val intent = Intent(getApplication(), LocationService::class.java).apply {
@@ -167,6 +195,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Stops the current trip.
+     *
+     * Validates that the user is near a valid operator point of the same type as the start point.
+     * Calculates the total distance and points, saves the trip locally and to Firestore,
+     * and stops the foreground service.
+     */
     fun stopTrip() {
         if (!isTracking) return
 
@@ -189,17 +224,20 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         val endPointName = nearestPoint.name
 
+        // Stop the foreground service
         val intent = Intent(getApplication(), LocationService::class.java).apply {
             action = "STOP"
         }
         getApplication<Application>().startService(intent)
 
+        // Resume local updates
         startLocationUpdates()
 
         isTracking = false
         _isTrackingState.value = false
         simulationJob?.cancel()
 
+        // Calculate final trip details
         val finalPoints = _routePoints.value
         val routeString = finalPoints.joinToString(";") { "${it.latitude},${it.longitude}" }
         val totalDistanceMeters = calculateDistance(finalPoints)
@@ -221,6 +259,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         startPointType = null
     }
 
+    /**
+     * Starts a simulated trip for testing purposes without moving physically.
+     */
     fun startSimulatedTrip() {
         stopLocalLocationUpdates()
 
@@ -257,6 +298,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun updateLocation(location: Location) {
         _currentLocation.value = location
+        // Refresh nearby operators based on new location
         loadOperators(location.latitude, location.longitude)
 
         if (isTracking) {
@@ -285,6 +327,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearUiMessage() { _uiMessage.value = null }
 
+    /**
+     * Fetches nearby operator points from the repository.
+     */
     fun loadOperators(lat: Double, lon: Double) {
         viewModelScope.launch {
             try {
@@ -293,18 +338,31 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Saves the trip data to Firebase Firestore.
+     */
     private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int, startLoc: String?, endLoc: String, routePath: String) {
         val tripData = hashMapOf("userId" to userId, "startTime" to start, "endTime" to end, "distanceMeters" to distance, "pointsEarned" to points, "date" to Date(start),
-                                 "startLocation" to startLoc, "endLocation" to endLoc, "routePath" to routePath)
+            "startLocation" to startLoc, "endLocation" to endLoc, "routePath" to routePath)
         db.collection("trips").add(tripData)
+        // Increment user stats atomically
         db.collection("users").document(userId).update("totalTrips", FieldValue.increment(1), "points", FieldValue.increment(points.toLong()))
     }
 
+    /**
+     * Resets trip-related data for a new trip.
+     */
     private fun resetTripData() {
         _routePoints.value = emptyList()
         tripStartTime = System.currentTimeMillis()
     }
 
+    /**
+     * Calculates the total distance of a route defined by a list of LatLng points.
+     *
+     * @param points The list of LatLng points representing the route.
+     * @return The total distance in meters.
+     */
     private fun calculateDistance(points: List<LatLng>): Double {
         var totalDistance = 0.0
         if (points.size < 2) return 0.0
@@ -316,12 +374,20 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         return totalDistance
     }
 
+    /**
+     * Cleans up resources when the ViewModel is cleared.
+     */
     override fun onCleared() {
         super.onCleared()
         stopLocalLocationUpdates()
         try { getApplication<Application>().unregisterReceiver(locationReceiver) } catch (e: Exception) {}
     }
 
+    /**
+     * Starts a trip initiated by a QR Code scan.
+     *
+     * @param qrContent The raw content of the scanned QR Code (expected to be "BUS" or "BIKE").
+     */
     fun startTripWithQr(qrContent: String) {
         val currentLoc = _currentLocation.value
 
@@ -330,37 +396,36 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // Assumimos que o QR Code diz apenas "BUS" ou "BIKE"
+        // Assume QR Code contains only "BUS" or "BIKE"
         val detectedType = try {
-            // Converte o texto para maiúsculas e tenta encontrar no Enum OperatorType
+            // Convert to uppercase and try to match Enum OperatorType
             OperatorType.valueOf(qrContent.uppercase())
         } catch (e: Exception) {
-            _uiMessage.value = "QR Code inválido: Tipo de veículo desconhecido ($qrContent)."
+            _uiMessage.value = "Invalid QR Code: Unknown vehicle type ($qrContent)."
             return
         }
 
-        // Verificar se estamos perto de um ponto (Raio de 10m)
+        // Check if we are near a point (10m radius)
         val nearestPoint = findNearestOperator(currentLoc, 10.0)
 
         if (nearestPoint == null) {
-            _uiMessage.value = "Tens de estar a 10m de um ponto para usar este QR Code!"
+            _uiMessage.value = "You must be within 10m of a point to use this QR Code!"
             return
         }
 
-        // Validar se o QR Code lido corresponde ao ponto onde estamos
-        // Ex: Se leres um código de BIKE numa paragem de BUS, dá erro.
+        // Validate if the QR Code matches the nearby point type
         if (nearestPoint.type != detectedType) {
-            _uiMessage.value = "QR Code errado! Estás num ponto de ${nearestPoint.type}, mas o código é de $detectedType."
+            _uiMessage.value = "Wrong QR Code! You are at a ${nearestPoint.type} point, but the code is for $detectedType."
             return
         }
 
-        // Tudo certo -> Iniciar Viagem
+        // All checks passed -> Start Trip
         startPointType = detectedType
         startPointName = nearestPoint.name
         resetTripData()
         isTracking = true
         _isTrackingState.value = true
-        _uiMessage.value = "Veículo desbloqueado: ${detectedType.name}. Boa viagem!"
+        _uiMessage.value = "Vehicle unlocked: ${detectedType.name}. Enjoy your trip!"
 
         stopLocalLocationUpdates()
 

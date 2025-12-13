@@ -1,6 +1,7 @@
 package pt.ipp.estg.readytomove.ui.screens.travel
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,9 +14,9 @@ import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,27 +28,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.foundation.clickable
 
+/**
+ * The main screen that displays the user's travel history.
+ *
+ * This screen fetches the list of past trips from the [TravelHistoryViewModel] and displays them
+ * in a scrollable list. It includes a summary header with aggregate statistics (total trips,
+ * total distance, total points).
+ *
+ * The layout adapts to different screen sizes (Phone vs Tablet).
+ *
+ * @param navController The navigation controller for handling screen transitions.
+ * @param windowSizeClass The window size class to adapt the layout for different screen sizes.
+ * @param viewModel The ViewModel that provides the trip data. Defaults to a new instance if not provided.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: WindowSizeClass, viewModel: TravelHistoryViewModel = viewModel()) {
-    val viewModel: TravelHistoryViewModel = viewModel()
+fun TravelHistoryScreen(
+    navController: NavHostController,
+    windowSizeClass: WindowSizeClass,
+    viewModel: TravelHistoryViewModel = viewModel()
+) {
     val trips by viewModel.trips.collectAsState()
 
+    // Load trips when the screen is launched
     LaunchedEffect(Unit) {
         viewModel.loadUserTrips()
     }
 
+    // --- Responsive Layout Calculations ---
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
@@ -77,6 +95,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -84,7 +103,10 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                 title = { Text(stringResource(R.string.travel_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -99,6 +121,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                     .padding(horizontal = pagePadding)
             )
         } else {
+            // Calculate summary statistics
             val totalKm = trips.sumOf { it.distanceKm }
             val totalPoints = trips.sumOf { it.points }
             val totalTrips = trips.size
@@ -112,6 +135,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                 verticalArrangement = Arrangement.spacedBy(itemSpacing),
                 contentPadding = PaddingValues(bottom = contentPaddingBottom)
             ) {
+                // 1. Header with Stats Summary
                 item {
                     SummaryHeader(
                         tripCount = totalTrips,
@@ -121,6 +145,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                         minHeight = summaryMinHeight
                     )
                 }
+                // 2. List of Trip Cards
                 items(trips, key = { it.id }) { trip ->
                     TripCard(
                         date = trip.date,
@@ -128,7 +153,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                         points = trip.points,
                         duration = trip.duration,
                         isTablet = isTablet,
-                        onClick= {
+                        onClick = {
                             navController.navigate("tripDetails/${trip.id}")
                         }
                     )
@@ -138,6 +163,15 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
     }
 }
 
+/**
+ * Displays a summary header with the total statistics of the user's travel history.
+ *
+ * @param tripCount Total number of trips.
+ * @param totalKm Total distance traveled in kilometers.
+ * @param totalPoints Total points earned.
+ * @param isTablet Boolean indicating if the device is a tablet (adjusts layout direction).
+ * @param minHeight Minimum height for the header container.
+ */
 @Composable
 private fun SummaryHeader(
     tripCount: Int,
@@ -169,6 +203,7 @@ private fun SummaryHeader(
                 )
         ) {
             if (isTablet) {
+                // Tablet Layout: Horizontal arrangement
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,6 +254,7 @@ private fun SummaryHeader(
                     }
                 }
             } else {
+                // Phone Layout: Vertical arrangement
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -267,6 +303,9 @@ private fun SummaryHeader(
     }
 }
 
+/**
+ * A small card component used to display a single statistic in the header.
+ */
 @Composable
 private fun StatChip(
     label: String,
@@ -306,6 +345,9 @@ private fun StatChip(
     }
 }
 
+/**
+ * Represents a single trip in the history list.
+ */
 @Composable
 private fun TripCard(
     date: String,
@@ -346,13 +388,13 @@ private fun TripCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    // Separador
+                    // Separator
                     Text(
                         " • ",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    // Ícone e Duração
+                    // Icon and Duration
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = null,
@@ -380,6 +422,9 @@ private fun TripCard(
     }
 }
 
+/**
+ * A small pill-shaped component to display the points earned for a trip.
+ */
 @Composable
 private fun PointsPill(points: Int, isTablet: Boolean) {
     Surface(
@@ -412,6 +457,9 @@ private fun PointsPill(points: Int, isTablet: Boolean) {
     }
 }
 
+/**
+ * Displays a placeholder state when the list of trips is empty.
+ */
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -437,6 +485,9 @@ private fun EmptyState(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Helper function to create a fake WindowSizeClass for layout previews.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(

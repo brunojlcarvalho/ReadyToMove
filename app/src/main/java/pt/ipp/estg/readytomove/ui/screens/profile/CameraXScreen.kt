@@ -31,6 +31,17 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * A screen that implements a custom camera interface using CameraX.
+ *
+ * This screen allows the user to:
+ * - View a live camera preview.
+ * - Switch between the front and back lenses.
+ * - Capture a photo, which is saved to the local cache directory.
+ *
+ * @param onPhotoTaken Callback function invoked when a photo is successfully captured.
+ * It returns the string URI of the saved image file.
+ */
 @Composable
 fun CameraXScreen(
     onPhotoTaken: (String) -> Unit
@@ -38,29 +49,33 @@ fun CameraXScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // State to track if the camera permission is granted
     var hasCameraPermission by remember { mutableStateOf(false) }
 
-    // 1. Estado para controlar qual câmara está ativa (Traseira por defeito)
+    // State to control which lens is currently active (Back camera by default)
     var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
 
+    // Launcher to request camera permissions
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted -> hasCameraPermission = granted }
     )
 
+    // Check for permissions as soon as the screen launches
     LaunchedEffect(Unit) {
         permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     if (hasCameraPermission) {
+        // PreviewView is a standard Android View, so we need to hold its reference
         val previewView = remember { PreviewView(context) }
         val imageCapture = remember { ImageCapture.Builder().build() }
 
-        // 2. O LaunchedEffect agora "escuta" alterações no lensFacing
+        // Re-bind the camera whenever the selected lens changes
         LaunchedEffect(lensFacing) {
             val cameraProvider = context.getCameraProvider()
 
-            // É essencial fazer unbind de tudo antes de mudar a câmara
+            // It is essential to unbind all use cases before rebinding to a new lens
             cameraProvider.unbindAll()
 
             val cameraSelector = CameraSelector.Builder()
@@ -68,6 +83,7 @@ fun CameraXScreen(
                 .build()
 
             try {
+                // Bind the camera lifecycle to the Compose LifecycleOwner
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
@@ -77,17 +93,18 @@ fun CameraXScreen(
                     imageCapture
                 )
             } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao iniciar câmara", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error starting camera", Toast.LENGTH_SHORT).show()
             }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
+            // Embed the Android View (PreviewView) into Compose
             AndroidView(
                 factory = { previewView },
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Botão de Disparar (Em baixo ao centro)
+            // Capture Button (Bottom Center)
             IconButton(
                 onClick = {
                     takePhoto(
@@ -99,7 +116,7 @@ fun CameraXScreen(
                             onPhotoTaken(uri.toString())
                         },
                         onError = {
-                            Toast.makeText(context, "Erro ao capturar foto", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Error capturing photo", Toast.LENGTH_SHORT).show()
                         }
                     )
                 },
@@ -110,16 +127,16 @@ fun CameraXScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Camera,
-                    contentDescription = "Tirar Foto",
+                    contentDescription = "Take Photo",
                     tint = Color.White,
                     modifier = Modifier.size(64.dp)
                 )
             }
 
-            // 3. Botão para Mudar de Câmara (Em cima à direita)
+            // Switch Camera Button (Top Right)
             IconButton(
                 onClick = {
-                    // Alterna entre Frente e Trás
+                    // Toggle between Front and Back lenses
                     lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
                         CameraSelector.LENS_FACING_FRONT
                     } else {
@@ -128,25 +145,35 @@ fun CameraXScreen(
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 48.dp, end = 24.dp) // Ajuste de padding para não ficar colado
+                    .padding(top = 48.dp, end = 24.dp)
                     .size(50.dp)
             ) {
-                // Se o ícone Cameraswitch der erro, usa Icons.Default.Refresh
                 Icon(
                     imageVector = Icons.Default.Cameraswitch,
-                    contentDescription = "Mudar Câmara",
+                    contentDescription = "Switch Camera",
                     tint = Color.White,
                     modifier = Modifier.size(40.dp)
                 )
             }
         }
     } else {
+        // Fallback UI if permission is denied
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("É necessária permissão de câmara")
+            Text("Camera permission is required")
         }
     }
 }
 
+/**
+ * Helper function to capture a photo and save it to the specified directory.
+ *
+ * @param filenameFormat The format pattern for the file name (e.g., date-time string).
+ * @param imageCapture The CameraX ImageCapture use case instance.
+ * @param outputDirectory The directory where the file will be saved.
+ * @param executor The executor to run the callback operations.
+ * @param onImageCaptured Callback triggered on success with the saved image URI.
+ * @param onError Callback triggered on failure with the exception.
+ */
 private fun takePhoto(
     filenameFormat: String,
     imageCapture: ImageCapture,
@@ -179,6 +206,11 @@ private fun takePhoto(
     )
 }
 
+/**
+ * Extension function to retrieve the ProcessCameraProvider asynchronously using Coroutines.
+ *
+ * @return The initialized ProcessCameraProvider.
+ */
 private suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
     val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
     cameraProviderFuture.addListener({
