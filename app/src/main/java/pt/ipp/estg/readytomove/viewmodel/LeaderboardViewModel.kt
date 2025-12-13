@@ -65,7 +65,7 @@ class LeaderboardViewModel(application: Application) : AndroidViewModel(applicat
                 checkIfRankDropped(entries)
 
             } catch (e: Exception) {
-                Log.e("LeaderboardViewModel", "Erro ao carregar leaderboard: ${e.message}")
+                Log.e("LeaderboardViewModel", "Error loading leaderboard: ${e.message}")
             } finally {
                 _isLoading.value = false
             }

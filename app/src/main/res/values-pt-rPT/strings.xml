@@ -61,6 +61,7 @@
     <string name="distance_label">Distância</string>
     <string name="details_label">Detalhes</string>
 
+    // Trip Details Strings
     <string name="trip_details_title">Detalhes da Viagem</string>
     <string name="share_sms_desc">Partilhar por SMS</string>
     <string name="trip_not_found">Viagem não encontrada.</string>
@@ -68,4 +69,13 @@
     <string name="duration_label">Duração</string>
     <string name="map_unavailable">Mapa da rota indisponível</string>
     <string name="share_trip_message">Acabei de fazer uma viagem no ReadyToMove! 🏃‍♂️\n\n📅 Data: %1$s\n📏 Distância: %2$s\n⏱️ Duração: %3$s\n⭐ Pontos: %4$d pts\n\nVem explorar a cidade comigo!</string>
+
+    // MapViewModel Strings
+    <string name="waiting_gps">A aguardar localização GPS...</string>
+    <string name="error_not_near_point">Tens de estar a 10m de um ponto (Bus/Bike) para iniciar!</string>
+    <string name="trip_started_at">Viagem iniciada em: %1$s</string>
+    <string name="error_no_gps">Sem GPS.</string>
+    <string name="error_end_trip_near_point">Tens de estar a 10m de um ponto para terminar a viagem!</string>
+    <string name="error_wrong_vehicle_type">Iniciaste em %1$s, tens de acabar num igual!</string>
+    <string name="trip_finished_points">Viagem terminada! Ganhaste %1$d pontos.</string>
 </resources>

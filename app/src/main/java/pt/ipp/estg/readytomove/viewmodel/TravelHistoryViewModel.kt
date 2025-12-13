@@ -69,7 +69,7 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                         } catch (e: Exception) { null }
                     }
 
-                    Log.d("TravelHistory", "A sincronizar ${remoteTrips.size} viagens.")
+                    Log.d("TravelHistory", "Sincronizing ${remoteTrips.size} trips.")
 
                     // Chamamos a função passando o userId para ele limpar a cache desse user
                     if (remoteTrips.isNotEmpty()) {
@@ -77,7 +77,7 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                     }
                 }
             } catch (e: Exception) {
-                Log.e("TravelHistory", "Erro sync: ${e.message}")
+                Log.e("TravelHistory", "Error sync: ${e.message}")
             }
         }
     }
