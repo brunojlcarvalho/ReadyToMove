@@ -48,7 +48,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.Close
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
 
@@ -318,7 +323,7 @@ private fun ProfileHeader(
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onSaveEdit: () -> Unit,
-    onCameraClick: () -> Unit, // <--- PARÂMETRO NOVO
+    onCameraClick: () -> Unit,
     headerHeight: Dp,
     avatarSize: Dp,
     nameFontSize: androidx.compose.ui.unit.TextUnit,
@@ -345,48 +350,81 @@ private fun ProfileHeader(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // --- ÁREA DO AVATAR ---
             Box(
-                modifier = Modifier
-                    .size(avatarSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.08f))
-                    .border(
-                        width = (if (isTablet) 4.dp else 3.dp),
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
-                        shape = CircleShape
-                    )
-                    .clickable { onCameraClick() }, // <--- CLIQUE AQUI
+                modifier = Modifier.size(avatarSize),
                 contentAlignment = Alignment.Center
             ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = name.firstOrNull()?.uppercase() ?: "?",
-                            fontSize = if (isTablet) 42.sp else 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                // 1. A FOTO (Camada de Baixo) com Fallback
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))
+                        .border(
+                            width = 4.dp,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            shape = CircleShape
                         )
+                        .clickable { onCameraClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Esta função auxiliar desenha a letra (extraída para reutilizar no erro)
+                    val PlaceholderLetter = @Composable {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name.firstOrNull()?.uppercase() ?: "?",
+                                fontSize = if (isTablet) 42.sp else 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
+
+                    if (avatarUrl != null) {
+                        SubcomposeAsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "Avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            // Se der erro a carregar (ex: ficheiro local não existe), mostra a letra
+                            error = { PlaceholderLetter() },
+                            loading = { PlaceholderLetter() } // Opcional: mostra letra enquanto carrega
+                        )
+                    } else {
+                        PlaceholderLetter()
+                    }
+                }
+
+                // 2. A "CAIXINHA" COM O "+" (Camada de Cima)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(if (isTablet) 6.dp else 4.dp)
+                        .size(if (isTablet) 36.dp else 30.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .clickable { onCameraClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Alterar Foto",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(if (isTablet) 24.dp else 20.dp)
+                    )
                 }
             }
 
             Spacer(Modifier.height(if (isTablet) 18.dp else 14.dp))
 
+            // --- NOME E EDIÇÃO (Mantém-se igual) ---
             AnimatedContent(
                 targetState = isEditing,
                 transitionSpec = {
@@ -396,9 +434,7 @@ private fun ProfileHeader(
                 label = "nameEdit"
             ) { editing ->
                 if (editing) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         TextField(
                             value = tempName,
                             onValueChange = onTempChange,
@@ -407,22 +443,28 @@ private fun ProfileHeader(
                                 fontSize = nameFontSize,
                                 fontWeight = FontWeight.Bold
                             ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                                cursorColor = MaterialTheme.colorScheme.onPrimary,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                            ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { onSaveEdit() }),
-                            placeholder = { Text(stringResource(R.string.placeholder_new_name)) }
+                            placeholder = { Text(stringResource(R.string.placeholder_new_name), color = MaterialTheme.colorScheme.onPrimary.copy(alpha=0.7f)) }
                         )
-                        Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onSaveEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.save_desc), tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Check, contentDescription = "Guardar", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onCancelEdit) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = stringResource(R.string.cancel_desc), tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Close, contentDescription = "Cancelar", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             name,
                             fontSize = nameFontSize,
@@ -431,7 +473,7 @@ private fun ProfileHeader(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onStartEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_name_desc), tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_name_desc), tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                         }
                     }
                 }
@@ -439,7 +481,7 @@ private fun ProfileHeader(
 
             Text(
                 email,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = emailFontSize
             )

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -272,16 +273,9 @@ private fun RowScope.PodiumCard(
         ) {
             Medal(position = entry.position)
             Spacer(Modifier.height(6.dp))
-            if (entry.avatarUrl != null) {
-                AsyncImage(
-                    model = entry.avatarUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(avatarSize)
-                        .clip(CircleShape)
-                )
-            } else {
+
+            // Função auxiliar para a letra
+            val PlaceholderLetter = @Composable {
                 Box(
                     modifier = Modifier
                         .size(avatarSize)
@@ -296,6 +290,21 @@ private fun RowScope.PodiumCard(
                     )
                 }
             }
+
+            if (entry.avatarUrl != null) {
+                SubcomposeAsyncImage(
+                    model = entry.avatarUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape),
+                    error = { PlaceholderLetter() } // Se falhar, mostra a letra
+                )
+            } else {
+                PlaceholderLetter()
+            }
+
             Spacer(Modifier.height(8.dp))
             Text(
                 entry.name,
@@ -311,7 +320,6 @@ private fun RowScope.PodiumCard(
         }
     }
 }
-
 
 @Composable
 private fun LeaderboardRow(
@@ -338,23 +346,16 @@ private fun LeaderboardRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             RankBadge(position = position)
-            Box(
-                modifier = Modifier
-                    .size(avatarSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                if (entry.avatarUrl != null) {
-                    AsyncImage(
-                        model = entry.avatarUrl,
-                        contentDescription = entry.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(avatarSize)
-                            .clip(CircleShape)
-                    )
-                } else {
+
+            // Função auxiliar para a letra
+            val PlaceholderLetter = @Composable {
+                Box(
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = entry.name.firstOrNull()?.uppercase() ?: "?",
                         fontWeight = FontWeight.Bold,
@@ -362,6 +363,21 @@ private fun LeaderboardRow(
                     )
                 }
             }
+
+            if (entry.avatarUrl != null) {
+                SubcomposeAsyncImage(
+                    model = entry.avatarUrl,
+                    contentDescription = entry.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape),
+                    error = { PlaceholderLetter() } // Se falhar, mostra a letra
+                )
+            } else {
+                PlaceholderLetter()
+            }
+
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
