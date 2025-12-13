@@ -66,12 +66,15 @@ class LocalRepository private constructor(private val db: AppDatabase) {
      * @param endTime The end time of the trip in milliseconds (nullable).
      * @param distanceMeters The distance of the trip in meters.
      */
-    suspend fun addTrip(userId: String, startTime: Long, endTime: Long?, distanceMeters: Double) {
+    suspend fun addTrip(userId: String, startTime: Long, endTime: Long?, distanceMeters: Double, startLocation: String?,
+                        endLocation: String?) {
         val tripCache = TripCache(
             userId = userId,
             startTime = startTime,
             endTime = endTime,
-            distanceMeters = distanceMeters
+            distanceMeters = distanceMeters,
+            startLocation = startLocation,
+            endLocation = endLocation
         )
         tripDao.insert(tripCache)
 
@@ -137,7 +140,9 @@ class LocalRepository private constructor(private val db: AppDatabase) {
                     date = date,
                     distanceKm = (cache.distanceMeters / 1000.0),
                     points = calculatePointsFromDistance(cache.distanceMeters),
-                    duration = durationStr
+                    duration = durationStr,
+                    startLocation = cache.startLocation,
+                    endLocation = cache.endLocation
                 )
             }
         }
