@@ -42,7 +42,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    // --- ESTADOS UI ---
     private val _currentLocation = MutableStateFlow<Location?>(null)
     val currentLocation: StateFlow<Location?> = _currentLocation
 
@@ -202,6 +201,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         simulationJob?.cancel()
 
         val finalPoints = _routePoints.value
+        val routeString = finalPoints.joinToString(";") { "${it.latitude},${it.longitude}" }
         val totalDistanceMeters = calculateDistance(finalPoints)
         val endTime = System.currentTimeMillis()
         val userId = auth.currentUser?.uid
@@ -209,9 +209,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         if (userId != null) {
             viewModelScope.launch {
-                localRepository.addTrip(userId, tripStartTime, endTime, totalDistanceMeters, startPointName, endPointName)
+                localRepository.addTrip(userId, tripStartTime, endTime, totalDistanceMeters, startPointName, endPointName, routeString)
                 try {
-                    saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned, startPointName, endPointName)
+                    saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned, startPointName, endPointName, routeString)
                 } catch (e: Exception) { e.printStackTrace() }
             }
             _uiMessage.value = getApplication<Application>().getString(R.string.trip_finished_points, pointsEarned)
@@ -293,9 +293,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int, startLoc: String?, endLoc: String) {
+    private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int, startLoc: String?, endLoc: String, routePath: String) {
         val tripData = hashMapOf("userId" to userId, "startTime" to start, "endTime" to end, "distanceMeters" to distance, "pointsEarned" to points, "date" to Date(start),
-                                 "startLocation" to startLoc, "endLocation" to endLoc)
+                                 "startLocation" to startLoc, "endLocation" to endLoc, "routePath" to routePath)
         db.collection("trips").add(tripData)
         db.collection("users").document(userId).update("totalTrips", FieldValue.increment(1), "points", FieldValue.increment(points.toLong()))
     }
@@ -330,7 +330,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // 1. Tentar perceber qual é o tipo de veículo pelo QR Code
         // Assumimos que o QR Code diz apenas "BUS" ou "BIKE"
         val detectedType = try {
             // Converte o texto para maiúsculas e tenta encontrar no Enum OperatorType
@@ -340,7 +339,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // 2. Verificar se estamos perto de um ponto (Raio de 10m)
+        // Verificar se estamos perto de um ponto (Raio de 10m)
         val nearestPoint = findNearestOperator(currentLoc, 10.0)
 
         if (nearestPoint == null) {
@@ -348,14 +347,14 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // 3. Validar se o QR Code lido corresponde ao ponto onde estamos
+        // Validar se o QR Code lido corresponde ao ponto onde estamos
         // Ex: Se leres um código de BIKE numa paragem de BUS, dá erro.
         if (nearestPoint.type != detectedType) {
             _uiMessage.value = "QR Code errado! Estás num ponto de ${nearestPoint.type}, mas o código é de $detectedType."
             return
         }
 
-        // 4. Tudo certo -> Iniciar Viagem (Lógica igual à anterior)
+        // Tudo certo -> Iniciar Viagem
         startPointType = detectedType
         startPointName = nearestPoint.name
         resetTripData()
@@ -365,7 +364,6 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         stopLocalLocationUpdates()
 
-        // Iniciar Serviço
         val intent = Intent(getApplication(), LocationService::class.java).apply {
             action = "START"
         }
