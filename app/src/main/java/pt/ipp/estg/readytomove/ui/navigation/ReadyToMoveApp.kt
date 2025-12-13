@@ -18,6 +18,7 @@ import pt.ipp.estg.readytomove.ui.screens.leaderboard.LeaderboardScreen
 import pt.ipp.estg.readytomove.ui.screens.map.MapScreen
 import pt.ipp.estg.readytomove.ui.screens.profile.ProfileScreen
 import pt.ipp.estg.readytomove.ui.screens.travel.TravelHistoryScreen
+import pt.ipp.estg.readytomove.ui.screens.profile.CameraXScreen
 
 @Composable
 fun ReadyToMoveApp(
@@ -85,6 +86,20 @@ fun ReadyToMoveApp(
                 tripId = tripId,
                 viewModel = historyViewModel,
                 windowSizeClass = windowSizeClass
+            )
+        }
+
+        composable("camera") {
+            CameraXScreen(
+                onPhotoTaken = { uriString ->
+                    // Guardamos o resultado no SavedStateHandle da entrada ANTERIOR (Profile)
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("avatar_result", uriString)
+
+                    // Voltamos para trás
+                    navController.popBackStack()
+                }
             )
         }
     }

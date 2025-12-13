@@ -81,6 +81,27 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun updateAvatar(uri: String) {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                // Atualizar no Firebase
+                db.collection("users").document(uid)
+                    .update("avatarUrl", uri)
+                    .await()
+
+                // Atualizar Localmente
+                val updatedUser = _user.value?.copy(avatarUrl = uri)
+                if (updatedUser != null) {
+                    _user.value = updatedUser
+                    localRepository.saveUser(updatedUser)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             auth.signOut()
