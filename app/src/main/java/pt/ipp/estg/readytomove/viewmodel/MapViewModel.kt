@@ -61,7 +61,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     private var isTracking = false
     private var tripStartTime: Long = 0
     private var startPointType: OperatorType? = null
-
+    private var startPointName: String? = null
     private var locationCallback: LocationCallback? = null
     private var simulationJob: Job? = null
 
@@ -149,6 +149,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         startPointType = nearestPoint.type
+        startPointName = nearestPoint.name
+
         resetTripData()
         isTracking = true
         _isTrackingState.value = true
@@ -186,6 +188,8 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        val endPointName = nearestPoint.name
+
         val intent = Intent(getApplication(), LocationService::class.java).apply {
             action = "STOP"
         }
@@ -205,9 +209,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         if (userId != null) {
             viewModelScope.launch {
-                localRepository.addTrip(userId, tripStartTime, endTime, totalDistanceMeters)
+                localRepository.addTrip(userId, tripStartTime, endTime, totalDistanceMeters, startPointName, endPointName)
                 try {
-                    saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned)
+                    saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned, startPointName, endPointName)
                 } catch (e: Exception) { e.printStackTrace() }
             }
             _uiMessage.value = getApplication<Application>().getString(R.string.trip_finished_points, pointsEarned)
@@ -289,8 +293,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int) {
-        val tripData = hashMapOf("userId" to userId, "startTime" to start, "endTime" to end, "distanceMeters" to distance, "pointsEarned" to points, "date" to Date(start))
+    private fun saveTripToFirebase(userId: String, start: Long, end: Long, distance: Double, points: Int, startLoc: String?, endLoc: String) {
+        val tripData = hashMapOf("userId" to userId, "startTime" to start, "endTime" to end, "distanceMeters" to distance, "pointsEarned" to points, "date" to Date(start),
+                                 "startLocation" to startLoc, "endLocation" to endLoc)
         db.collection("trips").add(tripData)
         db.collection("users").document(userId).update("totalTrips", FieldValue.increment(1), "points", FieldValue.increment(points.toLong()))
     }
@@ -352,6 +357,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         // 4. Tudo certo -> Iniciar Viagem (Lógica igual à anterior)
         startPointType = detectedType
+        startPointName = nearestPoint.name
         resetTripData()
         isTracking = true
         _isTrackingState.value = true

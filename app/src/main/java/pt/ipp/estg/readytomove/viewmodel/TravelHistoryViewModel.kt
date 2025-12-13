@@ -59,6 +59,8 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                         val startTime = doc.getLong("startTime") ?: 0L
                         val endTime = doc.getLong("endTime")
                         val distance = doc.getDouble("distanceMeters") ?: 0.0
+                        val startLoc = doc.getString("startLocation")
+                        val endLoc = doc.getString("endLocation")
 
                         // Criamos o objeto de cache. ID=0 para o Room tratar da inserção/update
                         TripCache(
@@ -66,7 +68,9 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                             userId = userId,
                             startTime = startTime,
                             endTime = endTime,
-                            distanceMeters = distance
+                            distanceMeters = distance,
+                            startLocation = startLoc,
+                            endLocation = endLoc
                         )
                     } catch (e: Exception) { null }
                 }

@@ -18,5 +18,7 @@ data class TripCache(
     val userId: String,
     val startTime: Long,
     val endTime: Long?,
-    val distanceMeters: Double = 0.0
+    val distanceMeters: Double = 0.0,
+    val startLocation: String? = null,
+    val endLocation: String? = null
 )

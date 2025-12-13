@@ -14,5 +14,7 @@ data class Trip(
     val date: String = "",
     val distanceKm: Double = 0.0,
     val points: Int = 0,
-    val duration: String = ""
+    val duration: String = "",
+    val startLocation: String? = "",
+    val endLocation: String? = ""
 )

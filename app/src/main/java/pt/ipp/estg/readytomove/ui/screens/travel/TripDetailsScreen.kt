@@ -141,6 +141,29 @@ private fun TripDetailsContent(
         PointsHeaderCard(points = trip.points, date = trip.date)
 
         Text(
+            "Percurso",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LocationInfoCard(
+                title = "Início",
+                address = trip.startLocation ?: "Desconhecido", // <--- SIMPLES
+                icon = Icons.Default.TripOrigin,
+                color = Color(0xFF4CAF50),
+                modifier = Modifier.weight(1f)
+            )
+            LocationInfoCard(
+                title = "Fim",
+                address = trip.endLocation ?: "Desconhecido",   // <--- SIMPLES
+                icon = Icons.Default.LocationOn,
+                color = Color(0xFFF44336),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Text(
             stringResource(R.string.statistics_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
@@ -291,6 +314,46 @@ private fun DetailCard(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LocationInfoCard(
+    title: String,
+    address: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = address,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 3,
+                minLines = 2 // Para alinhar altura dos cartões
+            )
         }
     }
 }
