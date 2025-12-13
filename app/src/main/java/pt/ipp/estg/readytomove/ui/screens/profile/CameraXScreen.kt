@@ -3,7 +3,6 @@ package pt.ipp.estg.readytomove.ui.screens.profile
 import android.Manifest
 import android.content.Context
 import android.net.Uri
-import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +15,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +40,9 @@ fun CameraXScreen(
 
     var hasCameraPermission by remember { mutableStateOf(false) }
 
+    // 1. Estado para controlar qual câmara está ativa (Traseira por defeito)
+    var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted -> hasCameraPermission = granted }
@@ -52,30 +55,39 @@ fun CameraXScreen(
     if (hasCameraPermission) {
         val previewView = remember { PreviewView(context) }
         val imageCapture = remember { ImageCapture.Builder().build() }
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-        // Configurar CameraX
-        LaunchedEffect(Unit) {
+        // 2. O LaunchedEffect agora "escuta" alterações no lensFacing
+        LaunchedEffect(lensFacing) {
             val cameraProvider = context.getCameraProvider()
+
+            // É essencial fazer unbind de tudo antes de mudar a câmara
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                },
-                imageCapture
-            )
+
+            val cameraSelector = CameraSelector.Builder()
+                .requireLensFacing(lensFacing)
+                .build()
+
+            try {
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    cameraSelector,
+                    Preview.Builder().build().also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    },
+                    imageCapture
+                )
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro ao iniciar câmara", Toast.LENGTH_SHORT).show()
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-            // 1. A Vista da Câmara
             AndroidView(
                 factory = { previewView },
                 modifier = Modifier.fillMaxSize()
             )
 
-            // 2. O Botão de Captura
+            // Botão de Disparar (Em baixo ao centro)
             IconButton(
                 onClick = {
                     takePhoto(
@@ -101,6 +113,30 @@ fun CameraXScreen(
                     contentDescription = "Tirar Foto",
                     tint = Color.White,
                     modifier = Modifier.size(64.dp)
+                )
+            }
+
+            // 3. Botão para Mudar de Câmara (Em cima à direita)
+            IconButton(
+                onClick = {
+                    // Alterna entre Frente e Trás
+                    lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                        CameraSelector.LENS_FACING_FRONT
+                    } else {
+                        CameraSelector.LENS_FACING_BACK
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 48.dp, end = 24.dp) // Ajuste de padding para não ficar colado
+                    .size(50.dp)
+            ) {
+                // Se o ícone Cameraswitch der erro, usa Icons.Default.Refresh
+                Icon(
+                    imageVector = Icons.Default.Cameraswitch,
+                    contentDescription = "Mudar Câmara",
+                    tint = Color.White,
+                    modifier = Modifier.size(40.dp)
                 )
             }
         }
@@ -143,7 +179,6 @@ private fun takePhoto(
     )
 }
 
-// Extensão para suspender e obter o provider (boilerplate da CameraX)
 private suspend fun Context.getCameraProvider(): ProcessCameraProvider = suspendCoroutine { continuation ->
     val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
     cameraProviderFuture.addListener({
