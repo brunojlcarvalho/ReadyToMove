@@ -69,4 +69,13 @@
     <string name="duration_label">Dauer</string>
     <string name="map_unavailable">Routenkarte nicht verfügbar</string>
     <string name="share_trip_message">Ich habe gerade eine Fahrt mit ReadyToMove beendet! 🏃‍♂️\n\n📅 Datum: %1$s\n📏 Distanz: %2$s\n⏱️ Dauer: %3$s\n⭐ Punkte: %4$d Pkt\n\nErkunde die Stadt mit mir!</string>
+
+    // MapViewModel Strings
+    <string name="waiting_gps">Warten auf GPS-Standort...</string>
+    <string name="error_not_near_point">Du musst dich im Umkreis von 10m um einen Punkt (Bus/Fahrrad) befinden, um zu starten!</string>
+    <string name="trip_started_at">Fahrt begonnen bei: %1$s</string>
+    <string name="error_no_gps">Kein GPS.</string>
+    <string name="error_end_trip_near_point">Du musst dich im Umkreis von 10m um einen Punkt befinden, um die Fahrt zu beenden!</string>
+    <string name="error_wrong_vehicle_type">Du hast mit %1$s begonnen, du musst mit dem gleichen Typ enden!</string>
+    <string name="trip_finished_points">Fahrt beendet! Du hast %1$d Punkte verdient.</string>
 </resources>

@@ -30,6 +30,7 @@ import pt.ipp.estg.readytomove.data.repository.GeoApifyRepository
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
 import pt.ipp.estg.readytomove.data.retrofit.RetrofitHelper
 import pt.ipp.estg.readytomove.service.LocationService
+import pt.ipp.estg.readytomove.R
 import java.util.Date
 
 class MapViewModel(application: Application) : AndroidViewModel(application) {
@@ -79,17 +80,16 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             if (intent?.action == LocationService.ACTION_LOCATION_UPDATE) {
                 val location = intent.getParcelableExtra<Location>(LocationService.EXTRA_LOCATION)
                 if (location != null) {
-                    Log.d("MapViewModel", "Recebi localização do Serviço! Atualizando UI.")
+                    Log.d("MapViewModel", "Received location from service! Updating UI.")
                     updateLocation(location)
                 } else {
-                    Log.e("MapViewModel", "Recebi intent mas location veio null")
+                    Log.e("MapViewModel", "Received null location from service!")
                 }
             }
         }
     }
 
     init {
-        Log.d("MapViewModel", "A registar Receiver...")
         val filter = IntentFilter(LocationService.ACTION_LOCATION_UPDATE)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -138,13 +138,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val currentLoc = _currentLocation.value
 
         if (currentLoc == null) {
-            _uiMessage.value = "A aguardar localização GPS..."
+            _uiMessage.value = getApplication<Application>().getString(R.string.waiting_gps)
             return
         }
 
         val nearestPoint = findNearestOperator(currentLoc, 10.0)
         if (nearestPoint == null) {
-            _uiMessage.value = "Tens de estar a 10m de um ponto (Bus/Bike) para iniciar!"
+            _uiMessage.value = getApplication<Application>().getString(R.string.error_not_near_point)
             return
         }
 
@@ -152,7 +152,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         resetTripData()
         isTracking = true
         _isTrackingState.value = true
-        _uiMessage.value = "Viagem iniciada em: ${nearestPoint.name}"
+        _uiMessage.value = getApplication<Application>().getString(R.string.trip_started_at, nearestPoint.name)
 
         stopLocalLocationUpdates()
 
@@ -171,18 +171,18 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
 
         val currentLoc = _currentLocation.value
         if (currentLoc == null) {
-            _uiMessage.value = "Sem GPS."
+            _uiMessage.value = getApplication<Application>().getString(R.string.error_no_gps)
             return
         }
 
         val nearestPoint = findNearestOperator(currentLoc, 10.0)
         if (nearestPoint == null) {
-            _uiMessage.value = "Tens de estar a 10m de um ponto para terminar a viagem!"
+            _uiMessage.value = getApplication<Application>().getString(R.string.error_end_trip_near_point)
             return
         }
 
         if (startPointType != null && nearestPoint.type != startPointType) {
-            _uiMessage.value = "Iniciaste em ${startPointType?.name}, tens de acabar num igual!"
+            _uiMessage.value = getApplication<Application>().getString(R.string.error_wrong_vehicle_type, startPointType?.name)
             return
         }
 
@@ -210,7 +210,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
                     saveTripToFirebase(userId, tripStartTime, endTime, totalDistanceMeters, pointsEarned)
                 } catch (e: Exception) { e.printStackTrace() }
             }
-            _uiMessage.value = "Viagem terminada! Ganhaste $pointsEarned pontos."
+            _uiMessage.value = getApplication<Application>().getString(R.string.trip_finished_points, pointsEarned)
         }
 
         _routePoints.value = emptyList()

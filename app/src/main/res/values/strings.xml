@@ -68,4 +68,14 @@
     <string name="duration_label">Duration</string>
     <string name="map_unavailable">Route map unavailable</string>
     <string name="share_trip_message">I just finished a trip on ReadyToMove! 🏃‍♂️\n\n📅 Date: %1$s\n📏 Distance: %2$s\n⏱️ Duration: %3$s\n⭐ Points: %4$d pts\n\nCome explore the city with me!</string>
+
+    // MapViewModel Strings
+    <string name="waiting_gps">Waiting for GPS location...</string>
+    <string name="error_not_near_point">You must be within 10m of a point (Bus/Bike) to start!</string>
+    <string name="trip_started_at">Trip started at: %1$s</string>
+    <string name="error_no_gps">No GPS.</string>
+    <string name="error_end_trip_near_point">You must be within 10m of a point to end the trip!</string>
+    <string name="error_wrong_vehicle_type">You started on %1$s, you must end on the same type!</string>
+    <string name="trip_finished_points">Trip finished! You earned %1$d points.</string>
+
 </resources>
