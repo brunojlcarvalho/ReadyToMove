@@ -4,6 +4,9 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import pt.ipp.estg.readytomove.data.model.local.TripCache
 
+/**
+ * Data Access Object (DAO) for managing TripCache entities in the local database.
+ */
 @Dao
 interface TripDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)

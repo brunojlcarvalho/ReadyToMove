@@ -9,14 +9,26 @@ import pt.ipp.estg.readytomove.data.local.dao.UserDao
 import pt.ipp.estg.readytomove.data.model.local.TripCache
 import pt.ipp.estg.readytomove.data.model.local.UserCache
 
+/**
+ * Room database for caching user and trip data.
+ */
 @Database(entities = [UserCache::class, TripCache::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun tripDao(): TripDao
 
+    /**
+     * Singleton pattern to get the database instance.
+     */
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
 
+        /**
+         * Get the singleton instance of AppDatabase.
+         *
+         * @param context The application context.
+         * @return The AppDatabase instance.
+         */
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
