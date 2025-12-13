@@ -61,8 +61,8 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                         val distance = doc.getDouble("distanceMeters") ?: 0.0
                         val startLoc = doc.getString("startLocation")
                         val endLoc = doc.getString("endLocation")
+                        val routePath = doc.getString("routePath")
 
-                        // Criamos o objeto de cache. ID=0 para o Room tratar da inserção/update
                         TripCache(
                             id = 0,
                             userId = userId,
@@ -70,16 +70,14 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
                             endTime = endTime,
                             distanceMeters = distance,
                             startLocation = startLoc,
-                            endLocation = endLoc
+                            endLocation = endLoc,
+                            routePath = routePath
                         )
                     } catch (e: Exception) { null }
                 }
 
                 Log.d("TravelHistory", "Recebidas ${remoteTrips.size} viagens em tempo real.")
 
-                // Atualizamos a base de dados local.
-                // Como o passo 1 (Room Flow) está a observar a BD local, a UI atualiza-se sozinha
-                // assim que o saveRemoteTrips acabar.
                 if (remoteTrips.isNotEmpty()) {
                     viewModelScope.launch {
                         localRepository.saveRemoteTrips(userId, remoteTrips)
@@ -93,7 +91,6 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
         return _trips.value.find { it.id == tripId }
     }
 
-    // Limpar a subscrição quando saímos do ecrã
     override fun onCleared() {
         super.onCleared()
         listenerRegistration?.remove()

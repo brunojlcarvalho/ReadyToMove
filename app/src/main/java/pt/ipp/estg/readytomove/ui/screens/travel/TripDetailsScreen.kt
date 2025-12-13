@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,6 +32,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.maps.android.compose.*
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.data.model.Trip
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
@@ -131,6 +138,23 @@ private fun TripDetailsContent(
     modifier: Modifier = Modifier,
     isTablet: Boolean
 ) {
+    val routePoints = remember(trip.routePath) {
+        if (trip.routePath.isNullOrEmpty()) {
+            emptyList()
+        } else {
+            try {
+                trip.routePath.split(";").mapNotNull {
+                    val parts = it.split(",")
+                    if (parts.size == 2) {
+                        LatLng(parts[0].toDouble(), parts[1].toDouble())
+                    } else null
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -149,18 +173,95 @@ private fun TripDetailsContent(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LocationInfoCard(
                 title = "Início",
-                address = trip.startLocation ?: "Desconhecido", // <--- SIMPLES
+                address = trip.startLocation ?: "Desconhecido",
+                time = trip.startTimeFormatted,
                 icon = Icons.Default.TripOrigin,
                 color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
+
             LocationInfoCard(
                 title = "Fim",
-                address = trip.endLocation ?: "Desconhecido",   // <--- SIMPLES
+                address = trip.endLocation ?: "Desconhecido",
+                time = trip.endTimeFormatted.ifEmpty { "--:--" },
                 icon = Icons.Default.LocationOn,
                 color = Color(0xFFF44336),
                 modifier = Modifier.weight(1f)
             )
+        }
+
+        if (routePoints.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                val cameraPositionState = rememberCameraPositionState {
+                    position = CameraPosition.fromLatLngZoom(routePoints.first(), 15f)
+                }
+
+                LaunchedEffect(routePoints) {
+                    if (routePoints.isNotEmpty()) {
+                        val boundsBuilder = LatLngBounds.builder()
+                        routePoints.forEach { boundsBuilder.include(it) }
+                        try {
+                            cameraPositionState.move(
+                                CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 100)
+                            )
+                        } catch (e: Exception) {
+                        }
+                    }
+                }
+
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        scrollGesturesEnabled = false,
+                        zoomGesturesEnabled = true,
+                        rotationGesturesEnabled = false,
+                        tiltGesturesEnabled = false,
+                        myLocationButtonEnabled = false
+                    )
+                ) {
+                    Polyline(
+                        points = routePoints,
+                        color = Color.Blue,
+                        width = 12f
+                    )
+
+                    Marker(
+                        state = MarkerState(position = routePoints.first()),
+                        title = "Início",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                    )
+
+                    Marker(
+                        state = MarkerState(position = routePoints.last()),
+                        title = "Fim",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    )
+                }
+            }
+        } else {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(R.string.map_unavailable), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
         }
 
         Text(
@@ -202,23 +303,8 @@ private fun TripDetailsContent(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-
-        Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f))
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(8.dp))
-                    Text(stringResource(R.string.map_unavailable), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
     }
 }
-
 @Composable
 private fun PointsHeaderCard(points: Int, date: String) {
     val gradient = Brush.linearGradient(
@@ -322,6 +408,7 @@ private fun DetailCard(
 private fun LocationInfoCard(
     title: String,
     address: String,
+    time: String,
     icon: ImageVector,
     color: Color,
     modifier: Modifier
@@ -346,13 +433,24 @@ private fun LocationInfoCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
             Spacer(Modifier.height(8.dp))
+
             Text(
                 text = address,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 3,
-                minLines = 2 // Para alinhar altura dos cartões
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text = time,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
             )
         }
     }

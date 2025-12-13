@@ -67,14 +67,15 @@ class LocalRepository private constructor(private val db: AppDatabase) {
      * @param distanceMeters The distance of the trip in meters.
      */
     suspend fun addTrip(userId: String, startTime: Long, endTime: Long?, distanceMeters: Double, startLocation: String?,
-                        endLocation: String?) {
+                        endLocation: String?, routePath: String?) {
         val tripCache = TripCache(
             userId = userId,
             startTime = startTime,
             endTime = endTime,
             distanceMeters = distanceMeters,
             startLocation = startLocation,
-            endLocation = endLocation
+            endLocation = endLocation,
+            routePath = routePath
         )
         tripDao.insert(tripCache)
 
@@ -129,8 +130,9 @@ class LocalRepository private constructor(private val db: AppDatabase) {
         return tripDao.getByUserFlow(userId).map { list ->
             list.map { cache ->
                 val date = sdf.format(Date(cache.startTime))
-
-                val end = cache.endTime ?: cache.startTime
+                val startFormatted = sdf.format(Date(cache.startTime))
+                val endFormatted = cache.endTime?.let { sdf.format(Date(it)) } ?: ""
+                val end = cache.endTime ?: System.currentTimeMillis()
                 val diffMillis = end - cache.startTime
                 val durationMin = TimeUnit.MILLISECONDS.toMinutes(diffMillis)
                 val durationStr = if (durationMin < 1L) "< 1 min" else "$durationMin min"
@@ -142,7 +144,10 @@ class LocalRepository private constructor(private val db: AppDatabase) {
                     points = calculatePointsFromDistance(cache.distanceMeters),
                     duration = durationStr,
                     startLocation = cache.startLocation,
-                    endLocation = cache.endLocation
+                    endLocation = cache.endLocation,
+                    routePath = cache.routePath,
+                    startTimeFormatted = startFormatted,
+                    endTimeFormatted = endFormatted
                 )
             }
         }
