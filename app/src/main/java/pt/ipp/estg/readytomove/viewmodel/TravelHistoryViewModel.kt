@@ -6,10 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import pt.ipp.estg.readytomove.data.model.Trip
 import pt.ipp.estg.readytomove.data.model.local.TripCache
 import pt.ipp.estg.readytomove.data.repository.LocalRepository
@@ -18,10 +18,10 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
 
     private val localRepository = LocalRepository.getInstance(application)
     private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance() // Adicionado Firestore
-
+    private val db = FirebaseFirestore.getInstance()
     private val _trips = MutableStateFlow<List<Trip>>(emptyList())
     val trips: StateFlow<List<Trip>> = _trips
+    private var listenerRegistration: ListenerRegistration? = null
 
     fun loadUserTrips() {
         val userId = auth.currentUser?.uid
@@ -30,59 +30,68 @@ class TravelHistoryViewModel(application: Application) : AndroidViewModel(applic
             Log.e("TravelHistory", "User not logged in")
             return
         }
-        // 1. Começa a observar a BD Local (Room)
-        // Assim que guardarmos dados lá, a UI atualiza sozinha
+
         viewModelScope.launch {
             localRepository.observeTripsForUser(userId).collect { userTrips ->
                 _trips.value = userTrips
             }
         }
 
-        // 2. Sincronizar com a Cloud (Firestore)
-        syncTripsFromCloud(userId)
+        // Subscrever alterações na Cloud (Firestore) em Tempo Real
+        startRealTimeSync(userId)
     }
 
-    private fun syncTripsFromCloud(userId: String) {
-        viewModelScope.launch {
-            try {
-                // Vai buscar todas as viagens deste user
-                val result = db.collection("trips")
-                    .whereEqualTo("userId", userId)
-                    .get()
-                    .await()
+    private fun startRealTimeSync(userId: String) {
+        // Se já existir um listener ativo, removemos para evitar duplicados
+        listenerRegistration?.remove()
 
-                if (!result.isEmpty) {
-                    val remoteTrips = result.documents.mapNotNull { doc ->
-                        try {
-                            val startTime = doc.getLong("startTime") ?: 0L
-                            val endTime = doc.getLong("endTime")
-                            val distance = doc.getDouble("distanceMeters") ?: 0.0
+        val query = db.collection("trips").whereEqualTo("userId", userId)
 
-                            // O ID vai a 0 para o Room gerar um novo
-                            TripCache(
-                                id = 0,
-                                userId = userId,
-                                startTime = startTime,
-                                endTime = endTime,
-                                distanceMeters = distance
-                            )
-                        } catch (e: Exception) { null }
-                    }
+        listenerRegistration = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("TravelHistory", "Erro ao sincronizar viagens: ${error.message}")
+                return@addSnapshotListener
+            }
 
-                    Log.d("TravelHistory", "Sincronizing ${remoteTrips.size} trips.")
+            if (snapshot != null && !snapshot.isEmpty) {
+                val remoteTrips = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        val startTime = doc.getLong("startTime") ?: 0L
+                        val endTime = doc.getLong("endTime")
+                        val distance = doc.getDouble("distanceMeters") ?: 0.0
 
-                    // Chamamos a função passando o userId para ele limpar a cache desse user
-                    if (remoteTrips.isNotEmpty()) {
+                        // Criamos o objeto de cache. ID=0 para o Room tratar da inserção/update
+                        TripCache(
+                            id = 0,
+                            userId = userId,
+                            startTime = startTime,
+                            endTime = endTime,
+                            distanceMeters = distance
+                        )
+                    } catch (e: Exception) { null }
+                }
+
+                Log.d("TravelHistory", "Recebidas ${remoteTrips.size} viagens em tempo real.")
+
+                // Atualizamos a base de dados local.
+                // Como o passo 1 (Room Flow) está a observar a BD local, a UI atualiza-se sozinha
+                // assim que o saveRemoteTrips acabar.
+                if (remoteTrips.isNotEmpty()) {
+                    viewModelScope.launch {
                         localRepository.saveRemoteTrips(userId, remoteTrips)
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("TravelHistory", "Error sync: ${e.message}")
             }
         }
     }
 
     fun getTripById(tripId: String): Trip? {
         return _trips.value.find { it.id == tripId }
+    }
+
+    // Limpar a subscrição quando saímos do ecrã
+    override fun onCleared() {
+        super.onCleared()
+        listenerRegistration?.remove()
     }
 }
