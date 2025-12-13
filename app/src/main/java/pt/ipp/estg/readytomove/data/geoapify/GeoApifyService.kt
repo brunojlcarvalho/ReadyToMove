@@ -5,6 +5,11 @@ import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.Query
 
+/**
+ * GeoApifyService
+ *
+ * Retrofit service interface for accessing GeoApify Places API.
+ */
 interface GeoApifyService {
 
     @Headers("Content-Type: application/json", "Accept: application/json")

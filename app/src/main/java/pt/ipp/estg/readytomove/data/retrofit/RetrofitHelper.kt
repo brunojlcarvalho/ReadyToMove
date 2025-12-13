@@ -7,6 +7,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
+/**
+ * Helper object to create Retrofit instances with predefined configurations.
+ */
 object RetrofitHelper {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -17,6 +20,9 @@ object RetrofitHelper {
         .add(KotlinJsonAdapterFactory())
         .build()
 
+    /**
+     * Creates a Retrofit instance with the specified base URL.
+     */
     fun retrofit(baseUrl: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(baseUrl)
