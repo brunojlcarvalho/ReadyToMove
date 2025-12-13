@@ -22,6 +22,18 @@ import androidx.compose.ui.res.stringResource
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
 
+/**
+ * The main Composable for the Login Screen.
+ *
+ * It serves as the entry point for authentication, orchestrating the interaction
+ * between the UI layout and the [AuthViewModel]. It handles the login process
+ * logic and navigation callbacks.
+ *
+ * @param viewModel The ViewModel responsible for authentication logic.
+ * @param windowSizeClass The size class of the device window, used for adaptive layout adjustments.
+ * @param onLoginSuccess Callback triggered when the login is successful.
+ * @param onRegisterClick Callback triggered when the user taps "Create Account".
+ */
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
@@ -32,6 +44,7 @@ fun LoginScreen(
     LoginScreenContent(
         windowSizeClass = windowSizeClass,
         onLogin = { email, pass, cb ->
+            // Delegates the login operation to the ViewModel
             viewModel.loginUser(email, pass) { success, error ->
                 cb(success, error)
             }
@@ -41,6 +54,11 @@ fun LoginScreen(
     )
 }
 
+/**
+ * A private Composable that calculates layout parameters based on the device size.
+ * It determines if the device is a Tablet, Portrait Phone, or Landscape Phone,
+ * and passes these flags to the layout renderer.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginScreenContent(
@@ -52,6 +70,7 @@ private fun LoginScreenContent(
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
+    // Determine device type for responsive design
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
             heightClass == WindowHeightSizeClass.Expanded
@@ -65,6 +84,13 @@ private fun LoginScreenContent(
     )
 }
 
+/**
+ * The actual UI layout implementation for the Login Screen.
+ *
+ * It renders the logo, input fields (Email/Password), and action buttons.
+ * The sizes and spacings are dynamically adjusted based on the [isTablet]
+ * and [isPortraitPhone] flags to ensure a good look on all devices.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginScreenLayout(
@@ -76,10 +102,12 @@ private fun LoginScreenLayout(
 ) {
     val context = LocalContext.current
 
+    // --- Adaptive UI Dimensions ---
+    // Adjusts width fraction, font sizes, and spacings based on device type
     val contentWidthFraction = when {
-        isTablet -> 0.5f
-        isPortraitPhone -> 0.9f
-        else -> 0.75f
+        isTablet -> 0.5f        // Use 50% width on tablets
+        isPortraitPhone -> 0.9f // Use 90% width on phones
+        else -> 0.75f           // Default (e.g., landscape phone)
     }
     val logoHeight = when {
         isTablet -> 220.dp
@@ -105,6 +133,7 @@ private fun LoginScreenLayout(
         else -> 16.dp
     }
 
+    // --- State Management ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -118,6 +147,7 @@ private fun LoginScreenLayout(
         verticalArrangement = Arrangement.Center
     ) {
 
+        // App Logo
         Image(
             painter = painterResource(id = R.drawable.readytomove_symbol),
             contentDescription = stringResource(R.string.app_name),
@@ -129,6 +159,7 @@ private fun LoginScreenLayout(
 
         Spacer(Modifier.height(spacingLarge))
 
+        // App Title
         Text(
             text = stringResource(R.string.app_name),
             fontSize = titleFontSize,
@@ -137,10 +168,12 @@ private fun LoginScreenLayout(
 
         Spacer(Modifier.height(spacingLarge))
 
+        // Input Form Container
         Column(
             modifier = Modifier.fillMaxWidth(contentWidthFraction),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Email Input
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -149,6 +182,7 @@ private fun LoginScreenLayout(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Password Input
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -160,12 +194,15 @@ private fun LoginScreenLayout(
 
             Spacer(Modifier.height(16.dp))
 
+            // Login Button with Loading State
             Button(
                 onClick = {
+                    // Basic Validation
                     if (email.isBlank() || password.isBlank()) {
                         errorMessage = context.getString(R.string.error_fill_fields)
                         return@Button
                     }
+
                     isLoading = true
                     onLogin(email.trim(), password) { success, error ->
                         isLoading = false
@@ -191,6 +228,7 @@ private fun LoginScreenLayout(
                 }
             }
 
+            // Error Message Display
             errorMessage?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, color = Color.Red, fontSize = 12.sp)
@@ -198,12 +236,15 @@ private fun LoginScreenLayout(
 
             Spacer(Modifier.height(12.dp))
 
+            // Register Link
             TextButton(onClick = onRegisterClick) {
                 Text(stringResource(R.string.create_account), fontSize = if (isTablet) 16.sp else 14.sp)
             }
         }
     }
 }
+
+// --- PREVIEWS ---
 
 @Preview(showBackground = true, name = "Login - Phone")
 @Composable

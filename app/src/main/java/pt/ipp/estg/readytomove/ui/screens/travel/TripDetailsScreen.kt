@@ -42,6 +42,21 @@ import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.data.model.Trip
 import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 
+/**
+ * Screen that displays the detailed information of a specific trip.
+ *
+ * This screen shows:
+ * - Total points earned and the date of the trip.
+ * - Start and End locations with timestamps.
+ * - A static map view visualizing the route taken.
+ * - Statistics such as total distance and duration.
+ * - An option to share the trip summary via SMS.
+ *
+ * @param navController Controller for navigation interactions (e.g., going back).
+ * @param tripId The unique identifier of the trip to display.
+ * @param viewModel The ViewModel containing the trip data.
+ * @param windowSizeClass Used for adaptive layout decisions (Tablet vs Phone).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TripDetailsScreen(
@@ -50,12 +65,16 @@ fun TripDetailsScreen(
     viewModel: TravelHistoryViewModel,
     windowSizeClass: WindowSizeClass
 ) {
+    // Observe the list of trips from the ViewModel
     val trips by viewModel.trips.collectAsState()
 
+    // Find the specific trip by ID.
+    // 'remember' ensures we don't re-search the list on every recomposition unless 'trips' changes.
     val trip = remember(trips, tripId) {
         trips.find { it.id == tripId }
     }
 
+    // --- Responsive Layout Calculations ---
     val widthClass = windowSizeClass.widthSizeClass
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -69,10 +88,14 @@ fun TripDetailsScreen(
                 title = { Text(stringResource(R.string.trip_details_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 actions = {
+                    // Show Share button only if trip data is available
                     if (trip != null) {
                         IconButton(onClick = { shareTripViaSMS(context, trip) }) {
                             Icon(
@@ -87,6 +110,7 @@ fun TripDetailsScreen(
         }
     ) { padding ->
         if (trip == null) {
+            // Error/Loading State: If trip is not found or list is empty
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -100,6 +124,7 @@ fun TripDetailsScreen(
                 }
             }
         } else {
+            // Success State: Display content
             TripDetailsContent(
                 trip = trip,
                 modifier = Modifier.padding(padding),
@@ -109,9 +134,16 @@ fun TripDetailsScreen(
     }
 }
 
+/**
+ * Helper function to create an intent for sharing trip details via SMS.
+ *
+ * @param context The current context to launch the activity.
+ * @param trip The trip object containing the data to share.
+ */
 private fun shareTripViaSMS(context: Context, trip: Trip) {
     val distanceStr = String.format("%.2f km", trip.distanceKm)
 
+    // Format the message using a string resource template
     val message = context.getString(
         R.string.share_trip_message,
         trip.date,
@@ -120,8 +152,9 @@ private fun shareTripViaSMS(context: Context, trip: Trip) {
         trip.points
     )
 
+    // Create an intent with ACTION_SENDTO to target SMS apps specifically
     val intent = Intent(Intent.ACTION_SENDTO).apply {
-        data = Uri.parse("smsto:")
+        data = Uri.parse("smsto:") // Only SMS apps should handle this
         putExtra("sms_body", message)
     }
 
@@ -132,12 +165,20 @@ private fun shareTripViaSMS(context: Context, trip: Trip) {
     }
 }
 
+/**
+ * The content section of the details screen.
+ *
+ * It parses the route string to coordinates and renders the Google Map
+ * and statistical cards.
+ */
 @Composable
 private fun TripDetailsContent(
     trip: Trip,
     modifier: Modifier = Modifier,
     isTablet: Boolean
 ) {
+    // Parse the route string (format: "lat,lon;lat,lon") into a List of LatLng objects.
+    // If parsing fails or string is empty, returns an empty list.
     val routePoints = remember(trip.routePath) {
         if (trip.routePath.isNullOrEmpty()) {
             emptyList()
@@ -162,34 +203,37 @@ private fun TripDetailsContent(
             .padding(if (isTablet) 32.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        // 1. Header Card (Points & Date)
         PointsHeaderCard(points = trip.points, date = trip.date)
 
         Text(
-            "Percurso",
+            "Route", // Could be extracted to string resource
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
 
+        // 2. Start and End Location Cards
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LocationInfoCard(
-                title = "Início",
-                address = trip.startLocation ?: "Desconhecido",
+                title = "Start",
+                address = trip.startLocation ?: "Unknown",
                 time = trip.startTimeFormatted,
                 icon = Icons.Default.TripOrigin,
-                color = Color(0xFF4CAF50),
+                color = Color(0xFF4CAF50), // Green
                 modifier = Modifier.weight(1f)
             )
 
             LocationInfoCard(
-                title = "Fim",
-                address = trip.endLocation ?: "Desconhecido",
+                title = "End",
+                address = trip.endLocation ?: "Unknown",
                 time = trip.endTimeFormatted.ifEmpty { "--:--" },
                 icon = Icons.Default.LocationOn,
-                color = Color(0xFFF44336),
+                color = Color(0xFFF44336), // Red
                 modifier = Modifier.weight(1f)
             )
         }
 
+        // 3. Map Section
         if (routePoints.isNotEmpty()) {
             Card(
                 modifier = Modifier
@@ -198,10 +242,12 @@ private fun TripDetailsContent(
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
+                // Initialize camera on the first point
                 val cameraPositionState = rememberCameraPositionState {
                     position = CameraPosition.fromLatLngZoom(routePoints.first(), 15f)
                 }
 
+                // Adjust camera to fit the entire route bounds once loaded
                 LaunchedEffect(routePoints) {
                     if (routePoints.isNotEmpty()) {
                         val boundsBuilder = LatLngBounds.builder()
@@ -211,6 +257,7 @@ private fun TripDetailsContent(
                                 CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 100)
                             )
                         } catch (e: Exception) {
+                            // Handle potential layout/bounds errors silently
                         }
                     }
                 }
@@ -218,6 +265,7 @@ private fun TripDetailsContent(
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
+                    // Disable gestures to keep it as a static preview
                     uiSettings = MapUiSettings(
                         zoomControlsEnabled = false,
                         scrollGesturesEnabled = false,
@@ -227,26 +275,30 @@ private fun TripDetailsContent(
                         myLocationButtonEnabled = false
                     )
                 ) {
+                    // Draw the path
                     Polyline(
                         points = routePoints,
                         color = Color.Blue,
                         width = 12f
                     )
 
+                    // Start Marker (Green)
                     Marker(
                         state = MarkerState(position = routePoints.first()),
-                        title = "Início",
+                        title = "Start",
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                     )
 
+                    // End Marker (Red)
                     Marker(
                         state = MarkerState(position = routePoints.last()),
-                        title = "Fim",
+                        title = "End",
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
                 }
             }
         } else {
+            // Fallback UI if map data is missing
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -264,12 +316,14 @@ private fun TripDetailsContent(
             }
         }
 
+        // 4. Statistics Section
         Text(
             stringResource(R.string.statistics_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
 
+        // Adaptive layout for stats cards
         if (isTablet) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DetailCard(
@@ -305,6 +359,10 @@ private fun TripDetailsContent(
         }
     }
 }
+
+/**
+ * A visually prominent card displaying the points earned and the trip date.
+ */
 @Composable
 private fun PointsHeaderCard(points: Int, date: String) {
     val gradient = Brush.linearGradient(
@@ -360,6 +418,9 @@ private fun PointsHeaderCard(points: Int, date: String) {
     }
 }
 
+/**
+ * A generic card to display a statistic with an icon, title, and value.
+ */
 @Composable
 private fun DetailCard(
     title: String,
@@ -404,6 +465,9 @@ private fun DetailCard(
     }
 }
 
+/**
+ * A card specialized for displaying location information (Start/End points).
+ */
 @Composable
 private fun LocationInfoCard(
     title: String,

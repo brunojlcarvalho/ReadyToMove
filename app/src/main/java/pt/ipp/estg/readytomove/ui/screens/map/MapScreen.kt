@@ -1,6 +1,7 @@
 package pt.ipp.estg.readytomove.ui.screens.map
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,21 +43,34 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pt.ipp.estg.readytomove.R
+import pt.ipp.estg.readytomove.data.model.TripState
 import pt.ipp.estg.readytomove.ui.theme.Theme
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVectorOriginal
 import pt.ipp.estg.readytomove.util.rememberAmbientLightLevel
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
-import android.content.Context
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 
-enum class TripState { IDLE, RUNNING, PAUSED }
-
+/**
+ * The main screen of the application containing the Google Map.
+ *
+ * This screen handles:
+ * - Displaying the user's location and nearby operator points (Bus/Bike).
+ * - Trip management (Start, Pause, Stop) via QR Code or manual interaction.
+ * - Adaptive UI layout for Phones and Tablets.
+ * - Permission handling for Location and Notifications.
+ * - Ambient light detection to suggest Dark Mode.
+ *
+ * @param navController The navigation controller to handle screen transitions.
+ * @param isDarkTheme Boolean indicating if the app is currently in Dark Mode.
+ * @param onToggleTheme Callback to toggle the application theme.
+ * @param windowSizeClass Class used to determine the device's screen size (Compact, Medium, Expanded).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(
@@ -65,13 +79,16 @@ fun MapScreen(
     onToggleTheme: (Boolean) -> Unit,
     windowSizeClass: WindowSizeClass
 ) {
+    // --- Responsive Layout Logic ---
     val width = windowSizeClass.widthSizeClass
     val height = windowSizeClass.heightSizeClass
 
+    // Determine device type to adjust dimensions dynamically
     val isTablet = width >= WindowWidthSizeClass.Medium
     val isPortraitPhone = width == WindowWidthSizeClass.Compact &&
             height == WindowHeightSizeClass.Expanded
 
+    // Define dimensions based on the device type
     val topBarIconSize = when {
         isTablet -> 36.dp
         isPortraitPhone -> 30.dp
@@ -109,36 +126,35 @@ fun MapScreen(
         else -> 16.sp
     }
 
+    // --- Context & ViewModel ---
     val context = LocalContext.current
     val viewModel: MapViewModel = viewModel()
     val scope = rememberCoroutineScope()
 
+    // --- State Management ---
     var hasPermission by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     var tripState by remember { mutableStateOf(TripState.IDLE) }
     var hasCenteredOnUser by remember { mutableStateOf(false) }
 
+    // Collecting flows from ViewModel
     val location by viewModel.currentLocation.collectAsState()
     val operatorPoints by viewModel.operatorPoints.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
-
-    val currentLightLux = rememberAmbientLightLevel()
-    val isLowLight = currentLightLux < 10f
-
-    var showLowLightMessage by remember { mutableStateOf(false) }
-
     val uiMessage by viewModel.uiMessage.collectAsState()
-
     val isTrackingState by viewModel.isTrackingState.collectAsState()
 
+    // --- Light Sensor Logic ---
+    val currentLightLux = rememberAmbientLightLevel()
+    val isLowLight = currentLightLux < 10f
+    var showLowLightMessage by remember { mutableStateOf(false) }
+
+    // Sync local trip state with ViewModel state
     LaunchedEffect(isTrackingState) {
-        if (isTrackingState) {
-            tripState = TripState.RUNNING
-        } else {
-            tripState = TripState.IDLE
-        }
+        tripState = if (isTrackingState) TripState.RUNNING else TripState.IDLE
     }
 
+    // Show a message when low light is detected (e.g., entering a tunnel or night time)
     LaunchedEffect(isLowLight) {
         if (isLowLight) {
             showLowLightMessage = true
@@ -149,25 +165,28 @@ fun MapScreen(
         }
     }
 
+    // Display Toast messages triggered by the ViewModel
     LaunchedEffect(uiMessage) {
         uiMessage?.let { message ->
-            val toast = Toast.makeText(context, message, Toast.LENGTH_LONG)
-            toast.show()
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             viewModel.clearUiMessage()
         }
     }
 
+    // Automatically toggle theme based on light sensor (optional feature)
     LaunchedEffect(isLowLight) {
         if (isDarkTheme != isLowLight) {
             onToggleTheme(isLowLight)
         }
     }
 
+    // --- Permissions Handling ---
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        //val notificationGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
+        // Notification permission is optional but recommended for Android 13+ foreground services
+        // val notificationGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
 
         if (locationGranted) {
             hasPermission = true
@@ -181,6 +200,7 @@ fun MapScreen(
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
 
+        // Request POST_NOTIFICATIONS only on Android 13 (Tiramisu) and above
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -197,6 +217,8 @@ fun MapScreen(
         }
     }
 
+    // --- Map Configuration ---
+    // Load custom JSON style for the map based on the current theme (Dark/Light)
     val mapProperties = remember(isDarkTheme, hasPermission) {
         val mapStyleRes = if (isDarkTheme) {
             R.raw.map_style_dark
@@ -213,13 +235,23 @@ fun MapScreen(
             }
         )
     }
-    val mapUiSettings = remember { mutableStateOf(MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)) }
+
+    // Disable default map UI controls to use custom buttons
+    val mapUiSettings = remember {
+        mutableStateOf(
+            MapUiSettings(
+                zoomControlsEnabled = false,
+                myLocationButtonEnabled = false
+            )
+        )
+    }
 
     val defaultPosition = LatLng(41.367, -8.194)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultPosition, 13f)
     }
 
+    // --- UI Structure (Drawer + Scaffold) ---
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = false,
@@ -243,6 +275,7 @@ fun MapScreen(
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             topBar = {
+                // Transparent TopBar just to hold the Menu button
                 TopAppBar(
                     title = { },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -269,12 +302,14 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                // --- Google Map Component ---
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     properties = mapProperties,
                     uiSettings = mapUiSettings.value,
                     cameraPositionState = cameraPositionState
                 ) {
+                    // Draw the route path if available
                     if (routePoints.isNotEmpty()) {
                         Polyline(
                             points = routePoints,
@@ -283,6 +318,7 @@ fun MapScreen(
                         )
                     }
 
+                    // User Location Marker
                     location?.let {
                         val userLatLng = LatLng(it.latitude, it.longitude)
 
@@ -294,15 +330,17 @@ fun MapScreen(
                             zIndex = 1.0f
                         )
 
+                        // Camera Animation Logic
                         LaunchedEffect(it) {
                             if (!hasCenteredOnUser) {
+                                // Initial center
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLngZoom(userLatLng, 15f),
                                     durationMs = 1000
                                 )
                                 hasCenteredOnUser = true
-                            }
-                            else if (tripState == TripState.RUNNING) {
+                            } else if (tripState == TripState.RUNNING) {
+                                // Follow user during trip
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLng(userLatLng),
                                     durationMs = 500
@@ -310,6 +348,8 @@ fun MapScreen(
                             }
                         }
                     }
+
+                    // Operator Points Markers (Bus/Bike)
                     val pointPrefix = stringResource(R.string.point_marker_snippet)
                     operatorPoints.forEachIndexed { i, op ->
                         val iconRes = when (op.type.name) {
@@ -317,8 +357,8 @@ fun MapScreen(
                             "BIKE" -> R.drawable.ic_bike
                             else -> R.drawable.ic_scooter
                         }
+                        // Adjust marker color based on theme
                         val markerColor = if (isDarkTheme) {
-
                             when (op.type.name) {
                                 "BUS" -> Color(0xFF90CAF9).toArgb()
                                 "BIKE" -> Color(0xFFA5D6A7).toArgb()
@@ -340,6 +380,7 @@ fun MapScreen(
                     }
                 }
 
+                // --- Floating Action Button (Center Map) ---
                 FloatingActionButton(
                     onClick = {
                         location?.let { loc ->
@@ -368,6 +409,7 @@ fun MapScreen(
                     )
                 }
 
+                // --- Bottom Controls Area ---
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -375,6 +417,7 @@ fun MapScreen(
                         .padding(bottom = bottomPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Low Light warning bubble
                     if (showLowLightMessage) {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
@@ -386,26 +429,34 @@ fun MapScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Default.DarkMode,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
                                 Spacer(Modifier.width(6.dp))
                                 Text(stringResource(R.string.night_mode_sensor), fontSize = 12.sp)
                             }
                         }
                     }
 
+                    // Trip State Controls
                     when (tripState) {
                         TripState.IDLE -> {
                             Button(
                                 onClick = {
-                                    // 1. Abre a câmara
+                                    // 1. Open ML Kit Camera Scanner
                                     scanQrCode(context) { qrResult ->
-                                        // 2. Se ler com sucesso, manda para o ViewModel
+                                        // 2. If successful, pass data to ViewModel to validate and start
                                         viewModel.startTripWithQr(qrResult)
                                     }
                                 },
                                 modifier = Modifier.height(bottomButtonHeight)
                             ) {
-                                Text(stringResource(R.string.start_trip), fontSize = mapButtonFontSize)
+                                Text(
+                                    stringResource(R.string.start_trip),
+                                    fontSize = mapButtonFontSize
+                                )
                             }
                         }
                         TripState.RUNNING -> {
@@ -416,7 +467,10 @@ fun MapScreen(
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text(stringResource(R.string.pause_trip), fontSize = mapButtonFontSize)
+                                    Text(
+                                        stringResource(R.string.pause_trip),
+                                        fontSize = mapButtonFontSize
+                                    )
                                 }
                                 Button(
                                     onClick = {
@@ -424,7 +478,10 @@ fun MapScreen(
                                     },
                                     modifier = Modifier.height(bottomButtonHeight)
                                 ) {
-                                    Text(stringResource(R.string.stop_trip), fontSize = mapButtonFontSize)
+                                    Text(
+                                        stringResource(R.string.stop_trip),
+                                        fontSize = mapButtonFontSize
+                                    )
                                 }
                             }
                         }
@@ -433,7 +490,10 @@ fun MapScreen(
                                 onClick = { tripState = TripState.RUNNING },
                                 modifier = Modifier.height(bottomButtonHeight)
                             ) {
-                                Text(stringResource(R.string.resume_trip), fontSize = mapButtonFontSize)
+                                Text(
+                                    stringResource(R.string.resume_trip),
+                                    fontSize = mapButtonFontSize
+                                )
                             }
                         }
                     }
@@ -443,6 +503,17 @@ fun MapScreen(
     }
 }
 
+/**
+ * The side navigation drawer for the application.
+ *
+ * @param isDarkTheme Current theme state.
+ * @param onToggleTheme Callback to switch theme.
+ * @param onNavigate Callback to handle navigation to different routes.
+ * @param onClose Callback to close the drawer.
+ * @param drawerWidth Width of the drawer based on device size.
+ * @param drawerHeaderHeight Height of the header area.
+ * @param drawerIconSize Size of the icons in the header.
+ */
 @Composable
 private fun AppDrawer(
     isDarkTheme: Boolean,
@@ -454,6 +525,7 @@ private fun AppDrawer(
     drawerIconSize: Dp
 ) {
     ModalDrawerSheet(modifier = Modifier.width(drawerWidth)) {
+        // Drawer Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -498,12 +570,17 @@ private fun AppDrawer(
             }
 
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd)) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_drawer_desc), tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.close_drawer_desc),
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
+        // Navigation Items
         NavigationDrawerItem(
             label = { Text(stringResource(R.string.nav_map)) },
             selected = false,
@@ -533,6 +610,7 @@ private fun AppDrawer(
         Spacer(Modifier.height(12.dp))
         Spacer(modifier = Modifier.weight(1f))
 
+        // Theme Toggle at the bottom
         ThemeToggle(
             isDark = isDarkTheme,
             onToggle = onToggleTheme,
@@ -541,7 +619,13 @@ private fun AppDrawer(
     }
 }
 
-// ... (ThemeToggle, fakeWindowSizeClass e Previews mantêm-se iguais)
+/**
+ * A custom animated toggle switch for Day/Night theme.
+ *
+ * @param isDark Current state of the theme.
+ * @param onToggle Callback when the user clicks the toggle.
+ * @param modifier Modifier for styling.
+ */
 @Composable
 private fun ThemeToggle(
     isDark: Boolean,
@@ -611,6 +695,9 @@ private fun ThemeToggle(
     }
 }
 
+/**
+ * Helper function to create a fake WindowSizeClass for Previews.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(
@@ -668,6 +755,12 @@ private fun MapScreenPreview_Tablet() {
     }
 }
 
+/**
+ * Initiates the Google ML Kit QR Code Scanner.
+ *
+ * @param context The current context.
+ * @param onSuccess Callback function invoked with the QR code raw value upon successful scan.
+ */
 fun scanQrCode(context: Context, onSuccess: (String) -> Unit) {
     val options = GmsBarcodeScannerOptions.Builder()
         .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
@@ -681,6 +774,6 @@ fun scanQrCode(context: Context, onSuccess: (String) -> Unit) {
             barcode.rawValue?.let { onSuccess(it) }
         }
         .addOnFailureListener {
-            Toast.makeText(context, "Erro ao abrir scanner", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Error opening scanner", Toast.LENGTH_SHORT).show()
         }
 }
