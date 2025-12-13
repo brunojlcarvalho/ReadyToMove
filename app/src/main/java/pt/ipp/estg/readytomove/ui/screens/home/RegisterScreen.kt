@@ -22,6 +22,18 @@ import androidx.compose.ui.unit.sp
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.AuthViewModel
 
+/**
+ * The main Composable for the User Registration Screen.
+ *
+ * It serves as the container for the sign-up flow, connecting the UI layer
+ * with the [AuthViewModel] to perform user creation. It handles form inputs,
+ * validation feedback, and navigation upon success or cancellation.
+ *
+ * @param viewModel The ViewModel responsible for the registration logic.
+ * @param windowSizeClass The size class of the device window, used for adaptive layout adjustments.
+ * @param onRegisterSuccess Callback triggered when the account is successfully created.
+ * @param onLoginClick Callback triggered when the user taps "Already have an account".
+ */
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel,
@@ -32,6 +44,7 @@ fun RegisterScreen(
     RegisterScreenContent(
         windowSizeClass = windowSizeClass,
         onRegister = { name, email, pass, cb ->
+            // Delegates the registration logic to the ViewModel
             viewModel.registerUser(name, email, pass) { success, error ->
                 cb(success, error)
             }
@@ -41,6 +54,11 @@ fun RegisterScreen(
     )
 }
 
+/**
+ * A private Composable that determines the layout strategy based on the available screen space.
+ * It classifies the device as Tablet, Portrait Phone, or Landscape Phone to provide
+ * the best user experience.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegisterScreenContent(
@@ -52,6 +70,7 @@ private fun RegisterScreenContent(
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
+    // Logic to detect device form factor
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
             heightClass == WindowHeightSizeClass.Expanded
@@ -65,6 +84,13 @@ private fun RegisterScreenContent(
     )
 }
 
+/**
+ * The actual UI layout implementation for the Registration Screen.
+ *
+ * It renders the registration form including Name, Email, Password, and Confirm Password fields.
+ * It includes client-side validation logic (e.g., password matching, empty fields) before
+ * calling the ViewModel.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegisterScreenLayout(
@@ -76,6 +102,8 @@ private fun RegisterScreenLayout(
 ) {
     val context = LocalContext.current
 
+    // --- Adaptive UI Dimensions ---
+    // Scalable sizes and spacings based on device type
     val contentWidthFraction = when {
         isTablet -> 0.5f
         isPortraitPhone -> 0.9f
@@ -105,6 +133,7 @@ private fun RegisterScreenLayout(
         else -> 16.dp
     }
 
+    // --- State Management ---
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -120,6 +149,7 @@ private fun RegisterScreenLayout(
         verticalArrangement = Arrangement.Center
     ) {
 
+        // Application Logo
         Image(
             painter = painterResource(id = R.drawable.readytomove_symbol),
             contentDescription = stringResource(R.string.app_name),
@@ -131,7 +161,7 @@ private fun RegisterScreenLayout(
 
         Spacer(Modifier.height(spacingLarge))
 
-        // "Criar Conta"
+        // Screen Title ("Create Account")
         Text(
             text = stringResource(R.string.create_account),
             fontSize = titleFontSize,
@@ -140,10 +170,12 @@ private fun RegisterScreenLayout(
 
         Spacer(Modifier.height(spacingLarge))
 
+        // Form Container
         Column(
             modifier = Modifier.fillMaxWidth(contentWidthFraction),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Name Input
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -152,6 +184,7 @@ private fun RegisterScreenLayout(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Email Input
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -160,6 +193,7 @@ private fun RegisterScreenLayout(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Password Input
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -169,6 +203,7 @@ private fun RegisterScreenLayout(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Confirm Password Input
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
@@ -180,8 +215,10 @@ private fun RegisterScreenLayout(
 
             Spacer(Modifier.height(16.dp))
 
+            // Registration Button
             Button(
                 onClick = {
+                    // --- Client-Side Validation ---
                     if (name.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
                         errorMessage = context.getString(R.string.error_fill_fields)
                         return@Button
@@ -194,6 +231,8 @@ private fun RegisterScreenLayout(
                         errorMessage = context.getString(R.string.error_passwords_match)
                         return@Button
                     }
+
+                    // Start Registration Process
                     isLoading = true
                     onRegister(name.trim(), email.trim(), password) { success, error ->
                         isLoading = false
@@ -219,6 +258,7 @@ private fun RegisterScreenLayout(
                 }
             }
 
+            // Error Message Display
             errorMessage?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, color = Color.Red, fontSize = 12.sp)
@@ -226,12 +266,15 @@ private fun RegisterScreenLayout(
 
             Spacer(Modifier.height(12.dp))
 
+            // Navigation to Login
             TextButton(onClick = onLoginClick) {
                 Text(stringResource(R.string.already_have_account), fontSize = if (isTablet) 16.sp else 14.sp)
             }
         }
     }
 }
+
+// --- PREVIEWS ---
 
 @Preview(showBackground = true, name = "Register - Phone")
 @Composable
