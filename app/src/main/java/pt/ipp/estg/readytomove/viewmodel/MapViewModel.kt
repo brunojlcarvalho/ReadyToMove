@@ -316,4 +316,57 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         stopLocalLocationUpdates()
         try { getApplication<Application>().unregisterReceiver(locationReceiver) } catch (e: Exception) {}
     }
+
+    fun startTripWithQr(qrContent: String) {
+        val currentLoc = _currentLocation.value
+
+        if (currentLoc == null) {
+            _uiMessage.value = getApplication<Application>().getString(R.string.waiting_gps)
+            return
+        }
+
+        // 1. Tentar perceber qual é o tipo de veículo pelo QR Code
+        // Assumimos que o QR Code diz apenas "BUS" ou "BIKE"
+        val detectedType = try {
+            // Converte o texto para maiúsculas e tenta encontrar no Enum OperatorType
+            OperatorType.valueOf(qrContent.uppercase())
+        } catch (e: Exception) {
+            _uiMessage.value = "QR Code inválido: Tipo de veículo desconhecido ($qrContent)."
+            return
+        }
+
+        // 2. Verificar se estamos perto de um ponto (Raio de 10m)
+        val nearestPoint = findNearestOperator(currentLoc, 10.0)
+
+        if (nearestPoint == null) {
+            _uiMessage.value = "Tens de estar a 10m de um ponto para usar este QR Code!"
+            return
+        }
+
+        // 3. Validar se o QR Code lido corresponde ao ponto onde estamos
+        // Ex: Se leres um código de BIKE numa paragem de BUS, dá erro.
+        if (nearestPoint.type != detectedType) {
+            _uiMessage.value = "QR Code errado! Estás num ponto de ${nearestPoint.type}, mas o código é de $detectedType."
+            return
+        }
+
+        // 4. Tudo certo -> Iniciar Viagem (Lógica igual à anterior)
+        startPointType = detectedType
+        resetTripData()
+        isTracking = true
+        _isTrackingState.value = true
+        _uiMessage.value = "Veículo desbloqueado: ${detectedType.name}. Boa viagem!"
+
+        stopLocalLocationUpdates()
+
+        // Iniciar Serviço
+        val intent = Intent(getApplication(), LocationService::class.java).apply {
+            action = "START"
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            getApplication<Application>().startForegroundService(intent)
+        } else {
+            getApplication<Application>().startService(intent)
+        }
+    }
 }

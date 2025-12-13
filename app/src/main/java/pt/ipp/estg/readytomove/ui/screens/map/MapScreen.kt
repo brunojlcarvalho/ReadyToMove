@@ -50,6 +50,10 @@ import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVector
 import pt.ipp.estg.readytomove.util.bitmapDescriptorFromVectorOriginal
 import pt.ipp.estg.readytomove.util.rememberAmbientLightLevel
 import pt.ipp.estg.readytomove.viewmodel.MapViewModel
+import android.content.Context
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 
 enum class TripState { IDLE, RUNNING, PAUSED }
 
@@ -393,7 +397,11 @@ fun MapScreen(
                         TripState.IDLE -> {
                             Button(
                                 onClick = {
-                                    viewModel.startTrip()
+                                    // 1. Abre a câmara
+                                    scanQrCode(context) { qrResult ->
+                                        // 2. Se ler com sucesso, manda para o ViewModel
+                                        viewModel.startTripWithQr(qrResult)
+                                    }
                                 },
                                 modifier = Modifier.height(bottomButtonHeight)
                             ) {
@@ -658,4 +666,21 @@ private fun MapScreenPreview_Tablet() {
             )
         )
     }
+}
+
+fun scanQrCode(context: Context, onSuccess: (String) -> Unit) {
+    val options = GmsBarcodeScannerOptions.Builder()
+        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+        .enableAutoZoom()
+        .build()
+
+    val scanner = GmsBarcodeScanning.getClient(context, options)
+
+    scanner.startScan()
+        .addOnSuccessListener { barcode ->
+            barcode.rawValue?.let { onSuccess(it) }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Erro ao abrir scanner", Toast.LENGTH_SHORT).show()
+        }
 }
