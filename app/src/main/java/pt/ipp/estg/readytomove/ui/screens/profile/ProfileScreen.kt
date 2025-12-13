@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.clickable
 import coil.compose.AsyncImage
 import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
@@ -56,6 +58,24 @@ import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
 fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: ProfileViewModel = viewModel()
     val user by viewModel.user.collectAsState()
+
+    // --- CORREÇÃO: Usar getStateFlow em vez de LiveData ---
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
+
+    // Usamos getStateFlow e collectAsState, que não precisam de bibliotecas extra
+    val avatarResultState = savedStateHandle?.getStateFlow<String?>("avatar_result", null)
+        ?.collectAsState()
+
+    val avatarUri = avatarResultState?.value
+
+    LaunchedEffect(avatarUri) {
+        avatarUri?.let { uri ->
+            viewModel.updateAvatar(uri) // Atualiza o avatar
+            savedStateHandle?.remove<String>("avatar_result") // Limpa o resultado
+        }
+    }
+    // ------------------------------------------------------
 
     LaunchedEffect(Unit) {
         viewModel.refreshUserData()
@@ -96,6 +116,7 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             totalTrips = user!!.totalTrips,
             onBack = { navController.navigateUp() },
             onUpdateName = { viewModel.updateName(it) },
+            onOpenCamera = { navController.navigate("camera") },
             onLogout = {
                 viewModel.logout()
                 navController.navigate("login") {
@@ -117,6 +138,7 @@ private fun ProfileScreenScaffold(
     totalTrips: Int,
     onBack: () -> Unit,
     onUpdateName: (String) -> Unit,
+    onOpenCamera: () -> Unit, // <--- PARÂMETRO NOVO
     onLogout: () -> Unit
 ) {
     val widthClass = windowSizeClass.widthSizeClass
@@ -204,6 +226,7 @@ private fun ProfileScreenScaffold(
                     isEditing = false
                     focus.clearFocus()
                 },
+                onCameraClick = onOpenCamera, // <--- LIGAR O CLIQUE
                 headerHeight = headerHeight,
                 avatarSize = avatarSize,
                 nameFontSize = nameFontSize,
@@ -295,6 +318,7 @@ private fun ProfileHeader(
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onSaveEdit: () -> Unit,
+    onCameraClick: () -> Unit, // <--- PARÂMETRO NOVO
     headerHeight: Dp,
     avatarSize: Dp,
     nameFontSize: androidx.compose.ui.unit.TextUnit,
@@ -330,7 +354,8 @@ private fun ProfileHeader(
                         width = (if (isTablet) 4.dp else 3.dp),
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
                         shape = CircleShape
-                    ),
+                    )
+                    .clickable { onCameraClick() }, // <--- CLIQUE AQUI
                 contentAlignment = Alignment.Center
             ) {
                 if (avatarUrl != null) {
@@ -579,6 +604,7 @@ private fun ProfileScreenPreview_Phone() {
             totalTrips = 42,
             onBack = {},
             onUpdateName = {},
+            onOpenCamera = {},
             onLogout = {}
         )
     }
@@ -601,6 +627,7 @@ private fun ProfileScreenPreview_Tablet() {
             totalTrips = 128,
             onBack = {},
             onUpdateName = {},
+            onOpenCamera = {},
             onLogout = {}
         )
     }
