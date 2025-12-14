@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -16,56 +17,97 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
-import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
-import androidx.compose.ui.unit.Dp
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.unit.DpSize
-import kotlin.text.compareTo
-import kotlin.unaryMinus
+import coil.compose.SubcomposeAsyncImage
+import pt.ipp.estg.readytomove.R
+import pt.ipp.estg.readytomove.data.model.InfoRowData // <--- Import Adicionado
+import pt.ipp.estg.readytomove.viewmodel.ProfileViewModel
 
+/**
+ * The main screen that displays the user's profile information.
+ *
+ * This screen is responsible for:
+ * - Fetching and displaying user data (Name, Email, Avatar, Stats).
+ * - Handling user interactions such as editing the name or updating the avatar.
+ * - Navigating to the Camera screen to take a new profile picture.
+ * - Logging out the user.
+ *
+ * It uses [ProfileViewModel] to manage the UI state and data operations.
+ *
+ * @param navController The navigation controller for handling screen transitions.
+ * @param windowSizeClass The window size class to adapt the layout for different screen sizes.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: ProfileViewModel = viewModel()
     val user by viewModel.user.collectAsState()
 
+    // --- Navigation State Handling ---
+    // We use the SavedStateHandle of the current back stack entry to receive results
+    // from other screens (like the Camera screen) without tight coupling.
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val savedStateHandle = currentBackStackEntry?.savedStateHandle
+
+    // Observe the 'avatar_result' key from the saved state.
+    // This value is set by the CameraXScreen when a photo is successfully taken.
+    val avatarResultState = savedStateHandle?.getStateFlow<String?>("avatar_result", null)
+        ?.collectAsState()
+
+    val avatarUri = avatarResultState?.value
+
+    // React to a new avatar URI being available
+    LaunchedEffect(avatarUri) {
+        avatarUri?.let { uri ->
+            viewModel.updateAvatar(uri) // Update the user's avatar in the ViewModel
+            savedStateHandle?.remove<String>("avatar_result") // Clear the result to avoid re-processing
+        }
+    }
+    // ------------------------------------------------------
+
+    // Refresh user data when the screen is first launched
+    LaunchedEffect(Unit) {
+        viewModel.refreshUserData()
+    }
+
     if (user == null) {
+        // Loading State: Show a progress indicator while data is being fetched
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 LargeTopAppBar(
-                    title = { Text("O meu Perfil") },
+                    title = { Text(stringResource(R.string.profile_title)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                         }
                     },
                     scrollBehavior = scrollBehavior
@@ -82,6 +124,7 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             }
         }
     } else {
+        // Content State: Display the profile scaffold with user data
         ProfileScreenScaffold(
             windowSizeClass = windowSizeClass,
             userName = user!!.name,
@@ -91,16 +134,21 @@ fun ProfileScreen(navController: NavHostController, windowSizeClass: WindowSizeC
             totalTrips = user!!.totalTrips,
             onBack = { navController.navigateUp() },
             onUpdateName = { viewModel.updateName(it) },
+            onOpenCamera = { navController.navigate("camera") },
             onLogout = {
                 viewModel.logout()
                 navController.navigate("login") {
-                    popUpTo("map") { inclusive = true }
+                    popUpTo(0) { inclusive = true } // Clear back stack on logout
                 }
             }
         )
     }
 }
 
+/**
+ * The internal scaffold for the Profile screen, separating UI structure from ViewModel logic.
+ * This makes the component easier to preview and test.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 private fun ProfileScreenScaffold(
@@ -112,14 +160,17 @@ private fun ProfileScreenScaffold(
     totalTrips: Int,
     onBack: () -> Unit,
     onUpdateName: (String) -> Unit,
+    onOpenCamera: () -> Unit,
     onLogout: () -> Unit
 ) {
-    // (mantém cálculos anteriores: widthClass, isTablet, pagePadding, etc.)
+    // --- Responsive Layout Calculations ---
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
             heightClass == WindowHeightSizeClass.Expanded
+
+    // Define adaptive dimensions based on device type
     val headerHeight = when {
         isTablet -> 340.dp
         isPortraitPhone -> 300.dp
@@ -156,6 +207,7 @@ private fun ProfileScreenScaffold(
         else -> 16.dp
     }
 
+    // State for local editing of the user name
     var isEditing by rememberSaveable { mutableStateOf(false) }
     var tempName by rememberSaveable { mutableStateOf("") }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -165,10 +217,10 @@ private fun ProfileScreenScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("O meu Perfil") },
+                title = { Text(stringResource(R.string.profile_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -180,7 +232,7 @@ private fun ProfileScreenScaffold(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Header full-width (sem padding horizontal externo)
+            // Profile Header with Avatar and Name
             ProfileHeader(
                 name = userName,
                 email = userEmail,
@@ -201,6 +253,7 @@ private fun ProfileScreenScaffold(
                     isEditing = false
                     focus.clearFocus()
                 },
+                onCameraClick = onOpenCamera,
                 headerHeight = headerHeight,
                 avatarSize = avatarSize,
                 nameFontSize = nameFontSize,
@@ -208,7 +261,7 @@ private fun ProfileScreenScaffold(
                 isTablet = isTablet
             )
 
-            // Conteúdo scrollável com padding lateral
+            // Scrollable Content: Stats and Info
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -218,6 +271,7 @@ private fun ProfileScreenScaffold(
             ) {
                 item {
                     if (isTablet) {
+                        // Tablet Layout: Stats and Info side-by-side
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -229,17 +283,18 @@ private fun ProfileScreenScaffold(
                                 cardHeight = statCardHeight
                             )
                             ProfileInfoCard(
-                                title = "Informações",
+                                title = stringResource(R.string.info_card_title),
                                 rows = listOf(
-                                    InfoRowData("Nome", userName),
-                                    InfoRowData("Email", userEmail),
-                                    InfoRowData("Viagens", totalTrips.toString()),
-                                    InfoRowData("Pontos", points.toString())
+                                    InfoRowData(stringResource(R.string.name_label), userName),
+                                    InfoRowData(stringResource(R.string.email_label), userEmail),
+                                    InfoRowData(stringResource(R.string.trips_label), totalTrips.toString()),
+                                    InfoRowData(stringResource(R.string.points_label), points.toString())
                                 ),
                                 modifier = Modifier.weight(1f)
                             )
                         }
                     } else {
+                        // Phone Layout: Stacked vertically
                         ProfileStatsSection(
                             points = points,
                             trips = totalTrips,
@@ -248,17 +303,18 @@ private fun ProfileScreenScaffold(
                         )
                         Spacer(Modifier.height(12.dp))
                         ProfileInfoCard(
-                            title = "Informações",
+                            title = stringResource(R.string.info_card_title),
                             rows = listOf(
-                                InfoRowData("Nome", userName),
-                                InfoRowData("Email", userEmail),
-                                InfoRowData("Viagens", totalTrips.toString()),
-                                InfoRowData("Pontos", points.toString())
+                                InfoRowData(stringResource(R.string.name_label), userName),
+                                InfoRowData(stringResource(R.string.email_label), userEmail),
+                                InfoRowData(stringResource(R.string.trips_label), totalTrips.toString()),
+                                InfoRowData(stringResource(R.string.points_label), points.toString())
                             )
                         )
                     }
                 }
                 item {
+                    // Logout Button
                     Button(
                         onClick = onLogout,
                         modifier = Modifier
@@ -273,7 +329,7 @@ private fun ProfileScreenScaffold(
                     ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Terminar sessão", fontSize = if (isTablet) 18.sp else 14.sp)
+                        Text(stringResource(R.string.logout_button), fontSize = if (isTablet) 18.sp else 14.sp)
                     }
                 }
             }
@@ -281,6 +337,10 @@ private fun ProfileScreenScaffold(
     }
 }
 
+/**
+ * Displays the top header section of the profile screen.
+ * Includes the avatar, name (editable), and email.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun ProfileHeader(
@@ -293,6 +353,7 @@ private fun ProfileHeader(
     onStartEdit: () -> Unit,
     onCancelEdit: () -> Unit,
     onSaveEdit: () -> Unit,
+    onCameraClick: () -> Unit,
     headerHeight: Dp,
     avatarSize: Dp,
     nameFontSize: androidx.compose.ui.unit.TextUnit,
@@ -319,47 +380,81 @@ private fun ProfileHeader(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // --- Avatar Section ---
             Box(
-                modifier = Modifier
-                    .size(avatarSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.08f))
-                    .border(
-                        width = (if (isTablet) 4.dp else 3.dp),
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.35f),
-                        shape = CircleShape
-                    ),
+                modifier = Modifier.size(avatarSize),
                 contentAlignment = Alignment.Center
             ) {
-                if (avatarUrl != null) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = name.firstOrNull()?.uppercase() ?: "?",
-                            fontSize = if (isTablet) 42.sp else 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                // 1. Base Layer: The Avatar Image (with fallback)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.2f))
+                        .border(
+                            width = 4.dp,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            shape = CircleShape
                         )
+                        .clickable { onCameraClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Helper composable for the fallback letter (e.g., "A" for "Ana")
+                    val PlaceholderLetter = @Composable {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = name.firstOrNull()?.uppercase() ?: "?",
+                                fontSize = if (isTablet) 42.sp else 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
                     }
+
+                    if (avatarUrl != null) {
+                        SubcomposeAsyncImage(
+                            model = avatarUrl,
+                            contentDescription = stringResource(R.string.desc_avatar),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            // Show the placeholder letter if loading fails (e.g., local file deleted)
+                            error = { PlaceholderLetter() },
+                            loading = { PlaceholderLetter() } // Optionally show letter while loading
+                        )
+                    } else {
+                        PlaceholderLetter()
+                    }
+                }
+
+                // 2. Overlay Layer: The "Add/Edit" Button
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(if (isTablet) 6.dp else 4.dp)
+                        .size(if (isTablet) 36.dp else 30.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .clickable { onCameraClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.desc_change_photo),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(if (isTablet) 24.dp else 20.dp)
+                    )
                 }
             }
 
             Spacer(Modifier.height(if (isTablet) 18.dp else 14.dp))
 
+            // --- Name Section (View Mode vs Edit Mode) ---
             AnimatedContent(
                 targetState = isEditing,
                 transitionSpec = {
@@ -369,9 +464,7 @@ private fun ProfileHeader(
                 label = "nameEdit"
             ) { editing ->
                 if (editing) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         TextField(
                             value = tempName,
                             onValueChange = onTempChange,
@@ -380,22 +473,28 @@ private fun ProfileHeader(
                                 fontSize = nameFontSize,
                                 fontWeight = FontWeight.Bold
                             ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                                cursorColor = MaterialTheme.colorScheme.onPrimary,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                            ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { onSaveEdit() }),
-                            placeholder = { Text("Novo nome") }
+                            placeholder = { Text(stringResource(R.string.placeholder_new_name), color = MaterialTheme.colorScheme.onPrimary.copy(alpha=0.7f)) }
                         )
-                        Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onSaveEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Guardar", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onCancelEdit) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = "Cancelar", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             name,
                             fontSize = nameFontSize,
@@ -404,7 +503,7 @@ private fun ProfileHeader(
                         )
                         Spacer(Modifier.width(8.dp))
                         IconButton(onClick = onStartEdit) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar nome", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit_name_desc), tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f))
                         }
                     }
                 }
@@ -412,7 +511,7 @@ private fun ProfileHeader(
 
             Text(
                 email,
-                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyMedium,
                 fontSize = emailFontSize
             )
@@ -420,6 +519,9 @@ private fun ProfileHeader(
     }
 }
 
+/**
+ * Displays key user statistics (Points and Trips) in a row.
+ */
 @Composable
 private fun ProfileStatsSection(
     points: Int,
@@ -434,14 +536,14 @@ private fun ProfileStatsSection(
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         StatCard(
-            title = "Pontos",
+            title = stringResource(R.string.points_label),
             value = points.toString(),
             icon = Icons.Default.Star,
             modifier = Modifier.weight(1f),
             cardHeight = cardHeight
         )
         StatCard(
-            title = "Viagens",
+            title = stringResource(R.string.trips_label),
             value = trips.toString(),
             icon = Icons.Default.History,
             modifier = Modifier.weight(1f),
@@ -450,8 +552,9 @@ private fun ProfileStatsSection(
     }
 }
 
-data class InfoRowData(val label: String, val value: String)
-
+/**
+ * Displays a list of user information details in a card layout.
+ */
 @Composable
 private fun ProfileInfoCard(
     title: String,
@@ -496,6 +599,9 @@ private fun ProfileInfoCard(
     }
 }
 
+/**
+ * A specialized card component for displaying a single statistic.
+ */
 @Composable
 fun StatCard(
     title: String,
@@ -539,7 +645,9 @@ fun StatCard(
     }
 }
 
-/* ------- Adições mínimas para Preview ------- */
+/**
+ * Helper function to create a fake WindowSizeClass for layout previews.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(
@@ -578,6 +686,7 @@ private fun ProfileScreenPreview_Phone() {
             totalTrips = 42,
             onBack = {},
             onUpdateName = {},
+            onOpenCamera = {},
             onLogout = {}
         )
     }
@@ -600,6 +709,7 @@ private fun ProfileScreenPreview_Tablet() {
             totalTrips = 128,
             onBack = {},
             onUpdateName = {},
+            onOpenCamera = {},
             onLogout = {}
         )
     }

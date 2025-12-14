@@ -22,32 +22,49 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import pt.ipp.estg.readytomove.R
 import pt.ipp.estg.readytomove.viewmodel.LeaderboardViewModel
 import pt.ipp.estg.readytomove.data.model.LeaderboardEntry
 
+/**
+ * The main Composable for the Leaderboard Screen.
+ *
+ * This screen displays a ranked list of users based on their points.
+ * It features a specialized "Podium" view for the top 3 users and a standard list
+ * for the remaining participants. The layout adapts dynamically to different
+ * screen sizes (Tablet vs Phone).
+ *
+ * @param navController Controller to handle navigation actions (e.g., going back).
+ * @param windowSizeClass The size class of the device window, used for adaptive layout adjustments.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
     val viewModel: LeaderboardViewModel = viewModel()
+    // Collects the realtime leaderboard state from the ViewModel
     val leaderboard by viewModel.leaderboard.collectAsState()
 
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
+    // Device classification logic
     val isTablet = widthClass >= WindowWidthSizeClass.Medium
     val isPortraitPhone = widthClass == WindowWidthSizeClass.Compact &&
             heightClass == WindowHeightSizeClass.Expanded
 
+    // --- Adaptive Dimensions ---
+    // Calculates sizes for header, cards, and avatars based on device type
     val headerHeight = when {
         isTablet -> 220.dp
         isPortraitPhone -> 170.dp
@@ -84,13 +101,16 @@ fun LeaderboardScreen(navController: NavHostController, windowSizeClass: WindowS
             LargeTopAppBar(
                 title = {
                     Text(
-                        "Leaderboard",
+                        stringResource(R.string.leaderboard_title),
                         fontSize = MaterialTheme.typography.headlineMedium.fontSize * titleScale
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -114,6 +134,9 @@ fun LeaderboardScreen(navController: NavHostController, windowSizeClass: WindowS
     }
 }
 
+/**
+ * Renders the actual content of the Leaderboard, splitting the list into Top 3 and Rest.
+ */
 @Composable
 private fun LeaderboardContent(
     modifier: Modifier,
@@ -127,6 +150,7 @@ private fun LeaderboardContent(
     isTablet: Boolean,
     titleScale: Float
 ) {
+    // Separate the Top 3 for special display
     val top3 = entries.take(3)
     val rest = entries.drop(3)
 
@@ -135,6 +159,7 @@ private fun LeaderboardContent(
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // 1. Header with Stats Summary
         item {
             LeaderboardHeader(
                 headerHeight = headerHeight,
@@ -142,6 +167,8 @@ private fun LeaderboardContent(
                 titleScale = titleScale
             )
         }
+
+        // 2. Podium Section (Only if we have at least 3 users)
         if (top3.size == 3) {
             item {
                 PodiumSection(
@@ -151,9 +178,12 @@ private fun LeaderboardContent(
                 )
             }
         }
+
+        // 3. List of remaining users
         itemsIndexed(rest) { index, entry ->
             LeaderboardRow(
                 entry = entry,
+                // Calculate position based on list index + offset for top 3
                 position = entry.position ?: (index + 4),
                 avatarSize = avatarSize,
                 height = rowCardHeight,
@@ -164,6 +194,9 @@ private fun LeaderboardContent(
     }
 }
 
+/**
+ * Displays the decorative header with gradient background and title.
+ */
 @Composable
 private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScale: Float) {
     val gradient = Brush.verticalGradient(
@@ -185,14 +218,13 @@ private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScal
                 .padding(horizontal = horizontalPadding)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
-                        "Top Utilizadores",
+                        stringResource(R.string.top_users_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
@@ -200,7 +232,7 @@ private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScal
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "Quem está a liderar esta semana",
+                        stringResource(R.string.top_users_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                     )
@@ -216,6 +248,9 @@ private fun LeaderboardHeader(headerHeight: Dp, horizontalPadding: Dp, titleScal
     }
 }
 
+/**
+ * Renders the top 3 users in a Podium layout (2nd - 1st - 3rd).
+ */
 @Composable
 private fun PodiumSection(entries: List<LeaderboardEntry>, podiumCardHeight: Dp, podiumAvatarSize: Dp) {
     val ordered = entries.sortedBy { it.position }
@@ -230,13 +265,16 @@ private fun PodiumSection(entries: List<LeaderboardEntry>, podiumCardHeight: Dp,
         val first = ordered.getOrNull(0)
         val third = ordered.getOrNull(2)
 
-        PodiumCard(entry = second, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFB0BEC5))
-        PodiumCard(entry = first, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFFFD700))
-        PodiumCard(entry = third, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFCD7F32))
+        // The order here defines the visual order: Left (2nd), Center (1st), Right (3rd)
+        PodiumCard(entry = second, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFB0BEC5)) // Silver
+        PodiumCard(entry = first, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFFFD700))  // Gold
+        PodiumCard(entry = third, height = podiumCardHeight, avatarSize = podiumAvatarSize, accent = Color(0xFFCD7F32))  // Bronze
     }
 }
 
-
+/**
+ * Represents a single card in the Podium (Top 3).
+ */
 @Composable
 private fun RowScope.PodiumCard(
     entry: LeaderboardEntry?,
@@ -267,16 +305,9 @@ private fun RowScope.PodiumCard(
         ) {
             Medal(position = entry.position)
             Spacer(Modifier.height(6.dp))
-            if (entry.avatarUrl != null) {
-                AsyncImage(
-                    model = entry.avatarUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(avatarSize)
-                        .clip(CircleShape)
-                )
-            } else {
+
+            // Helper Composable for fallback Avatar (First letter of name)
+            val PlaceholderLetter = @Composable {
                 Box(
                     modifier = Modifier
                         .size(avatarSize)
@@ -291,6 +322,21 @@ private fun RowScope.PodiumCard(
                     )
                 }
             }
+
+            if (entry.avatarUrl != null) {
+                SubcomposeAsyncImage(
+                    model = entry.avatarUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape),
+                    error = { PlaceholderLetter() }
+                )
+            } else {
+                PlaceholderLetter()
+            }
+
             Spacer(Modifier.height(8.dp))
             Text(
                 entry.name,
@@ -299,7 +345,7 @@ private fun RowScope.PodiumCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                "${entry.points} pts",
+                "${entry.points} ${stringResource(R.string.points_abbrev)}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -307,7 +353,9 @@ private fun RowScope.PodiumCard(
     }
 }
 
-
+/**
+ * Represents a standard row for users ranked 4th and below.
+ */
 @Composable
 private fun LeaderboardRow(
     entry: LeaderboardEntry,
@@ -333,23 +381,16 @@ private fun LeaderboardRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             RankBadge(position = position)
-            Box(
-                modifier = Modifier
-                    .size(avatarSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                if (entry.avatarUrl != null) {
-                    AsyncImage(
-                        model = entry.avatarUrl,
-                        contentDescription = entry.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(avatarSize)
-                            .clip(CircleShape)
-                    )
-                } else {
+
+            // Helper Composable for fallback Avatar
+            val PlaceholderLetter = @Composable {
+                Box(
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = entry.name.firstOrNull()?.uppercase() ?: "?",
                         fontWeight = FontWeight.Bold,
@@ -357,6 +398,21 @@ private fun LeaderboardRow(
                     )
                 }
             }
+
+            if (entry.avatarUrl != null) {
+                SubcomposeAsyncImage(
+                    model = entry.avatarUrl,
+                    contentDescription = entry.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(avatarSize)
+                        .clip(CircleShape),
+                    error = { PlaceholderLetter() }
+                )
+            } else {
+                PlaceholderLetter()
+            }
+
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
@@ -369,7 +425,7 @@ private fun LeaderboardRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "${entry.points} pts",
+                    "${entry.points} ${stringResource(R.string.points_abbrev)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -378,13 +434,16 @@ private fun LeaderboardRow(
     }
 }
 
+/**
+ * Helper to display the Medal Emoji based on rank.
+ */
 @Composable
 private fun Medal(position: Int) {
-    val (emoji, tint) = when (position) {
-        1 -> "🥇" to Color(0xFFFFD700)
-        2 -> "🥈" to Color(0xFFC0C0C0)
-        3 -> "🥉" to Color(0xFFCD7F32)
-        else -> "⭐" to MaterialTheme.colorScheme.primary
+    val emoji = when (position) {
+        1 -> "🥇"
+        2 -> "🥈"
+        3 -> "🥉"
+        else -> "⭐"
     }
     Text(
         text = emoji,
@@ -392,6 +451,9 @@ private fun Medal(position: Int) {
     )
 }
 
+/**
+ * Helper to display the Rank Number (e.g., #4) with a colored background.
+ */
 @Composable
 private fun RankBadge(position: Int) {
     val bg = when (position) {
@@ -414,6 +476,8 @@ private fun RankBadge(position: Int) {
         )
     }
 }
+
+// --- PREVIEWS ---
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable

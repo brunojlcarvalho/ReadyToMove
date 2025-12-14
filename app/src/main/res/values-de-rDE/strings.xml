@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadyToMove</string>
+
+    <string name="login_title">Anmelden</string>
+    <string name="email_label">E-Mail</string>
+    <string name="password_label">Passwort</string>
+    <string name="login_button">Einloggen</string>
+    <string name="create_account">Konto erstellen</string>
+    <string name="error_fill_fields">Alle Felder ausfüllen</string>
+    <string name="error_to_login">Fehler bei der Anmeldung</string>
+
+    <string name="name_label">Name</string>
+    <string name="confirm_password_label">Passwort bestätigen</string>
+    <string name="error_password_short">Passwort zu kurz</string>
+    <string name="error_passwords_match">Passwörter stimmen nicht überein</string>
+    <string name="error_registering">Fehler bei der Registrierung</string>
+    <string name="already_have_account">Ich habe bereits ein Konto</string>
+
+    <string name="menu_desc">Menü</string>
+    <string name="close_drawer_desc">Schließen</string>
+    <string name="nav_map">Karte</string>
+    <string name="nav_profile">Profil</string>
+    <string name="nav_travel_history">Reiseverlauf</string>
+    <string name="explore_city">Erkunde die Stadt</string>
+    <string name="back_description">Zurück</string>
+
+    <string name="center_map_desc">Karte zentrieren</string>
+    <string name="night_mode_sensor">Nachtmodus (Lichtsensor)</string>
+    <string name="start_trip">Fahrt starten</string>
+    <string name="pause_trip">Pause</string>
+    <string name="stop_trip">Stopp</string>
+    <string name="resume_trip">Fortsetzen</string>
+    <string name="me_marker_title">Ich</string>
+    <string name="point_marker_snippet">Punkt</string>
+    <string name="scanner_error">Fehler beim Öffnen des Scanners</string>
+
+    <string name="waiting_gps">Warte auf GPS-Signal...</string>
+    <string name="error_not_near_point">Sie müssen sich im Umkreis von 10m um einen Punkt (Bus/Fahrrad) befinden, um zu starten!</string>
+    <string name="trip_started_at">Fahrt begonnen um: %1$s</string>
+    <string name="error_no_gps">Kein GPS-Signal.</string>
+    <string name="error_end_trip_near_point">Sie müssen sich im Umkreis von 10m um einen Punkt befinden, um die Fahrt zu beenden!</string>
+    <string name="error_wrong_vehicle_type">Sie haben in %1$s begonnen, Sie müssen im gleichen Typ enden!</string>
+    <string name="trip_finished_points">Fahrt beendet! Sie haben %1$d Punkte verdient.</string>
+    <string name="qr_invalid_type">Ungültiger QR-Code: Unbekannter Fahrzeugtyp (%1$s).</string>
+    <string name="qr_error_distance">Sie müssen sich im Umkreis von 10m um einen Punkt befinden, um diesen QR-Code zu nutzen!</string>
+    <string name="qr_error_mismatch">Falscher QR-Code! Sie sind an einem %1$s-Punkt, aber der Code ist für %2$s.</string>
+    <string name="qr_success_unlock">Fahrzeug entsperrt: %1$s. Gute Fahrt!</string>
+
+    <string name="leaderboard_title">Bestenliste</string>
+    <string name="top_users_title">Top-Nutzer</string>
+    <string name="top_users_subtitle">Wer diese Woche führt</string>
+    <string name="points_abbrev">Pkt</string>
+
+    <string name="profile_title">Mein Profil</string>
+    <string name="logout_button">Abmelden</string>
+    <string name="trips_label">Fahrten</string>
+    <string name="points_label">Punkte</string>
+    <string name="info_card_title">Informationen</string>
+    <string name="placeholder_new_name">Neuer Name</string>
+    <string name="save_desc">Speichern</string>
+    <string name="cancel_desc">Abbrechen</string>
+    <string name="edit_name_desc">Name bearbeiten</string>
+    <string name="desc_avatar">Benutzer-Avatar</string>
+    <string name="desc_change_photo">Foto ändern</string>
+
+    <string name="camera_error_start">Fehler beim Starten der Kamera</string>
+    <string name="camera_error_capture">Fehler bei der Aufnahme</string>
+    <string name="camera_desc_capture">Foto aufnehmen</string>
+    <string name="camera_desc_switch">Kamera wechseln</string>
+    <string name="camera_permission_needed">Kameraberechtigung erforderlich</string>
+
+    <string name="travel_history_title">Reiseverlauf</string>
+    <string name="empty_trips_title">Noch keine Fahrten</string>
+    <string name="empty_trips_subtitle">Wenn Sie Fahrten unternehmen, erscheinen diese hier.</string>
+    <string name="travel_summary_subtitle">Zusammenfassung Ihrer Fahrten</string>
+    <string name="distance_label">Entfernung</string>
+    <string name="details_label">Details</string>
+
+    <string name="trip_details_title">Fahrtdetails</string>
+    <string name="share_sms_desc">Per SMS teilen</string>
+    <string name="trip_not_found">Fahrt nicht gefunden.</string>
+    <string name="statistics_title">Statistiken</string>
+    <string name="duration_label">Dauer</string>
+    <string name="map_unavailable">Routenkarte nicht verfügbar</string>
+    <string name="share_trip_message">Ich habe gerade eine Fahrt mit ReadyToMove gemacht! 🏃‍♂️\n\n📅 Datum: %1$s\n📏 Entfernung: %2$s\n⏱️ Dauer: %3$s\n⭐ Punkte: %4$d Pkt\n\nKomm und erkunde die Stadt mit mir!</string>
+
+    <string name="trip_route_title">Route</string>
+    <string name="trip_start_label">Start</string>
+    <string name="trip_end_label">Ende</string>
+    <string name="unknown_location">Unbekannt</string>
+    <string name="trip_ongoing">Laufend...</string>
+
+    <string name="notification_trip_active">Unterwegs... (GPS aktiv)</string>
+    <string name="channel_trip_active">Aktive Fahrt</string>
+
+    <string name="channel_leaderboard_name">Bestenlisten-Updates</string>
+    <string name="channel_leaderboard_desc">Benachrichtigungen über Rangänderungen</string>
+    <string name="notif_rank_drop_title">Sie haben einen Platz verloren!</string>
+    <string name="notif_rank_drop_body">Sie sind von #%1$d auf #%2$d gefallen. Machen Sie eine Fahrt, um aufzuholen!</string>
+</resources>

@@ -1,9 +1,16 @@
+import java.util.Properties
+import kotlin.apply
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.kapt")
+}
+
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -19,7 +26,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val mapsApiKey = project.properties["MAPS_API_KEY"] as String? ?: ""
+        val mapsApiKey = localProps.getProperty("MAPS_API_KEY", "")
         buildConfigField("String", "MAPS_API_KEY", "\"$mapsApiKey\"")
         resValue("string", "google_maps_key", mapsApiKey)
     }
@@ -80,7 +87,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.adaptive)
+    implementation(libs.androidx.compose.foundation)
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     implementation("com.google.accompanist:accompanist-permissions:0.35.2-beta")
     implementation("androidx.compose.material3:material3-window-size-class:1.2.1")
@@ -89,7 +98,15 @@ dependencies {
     implementation(libs.androidx.material3)
     debugImplementation(libs.androidx.ui.tooling)
 
+    val camerax_version = "1.3.1"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }

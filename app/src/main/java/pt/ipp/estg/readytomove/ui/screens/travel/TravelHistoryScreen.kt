@@ -1,6 +1,7 @@
 package pt.ipp.estg.readytomove.ui.screens.travel
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,14 +9,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,22 +26,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.ui.unit.DpSize
+import pt.ipp.estg.readytomove.R
+import pt.ipp.estg.readytomove.viewmodel.TravelHistoryViewModel
 
+/**
+ * The main screen that displays the user's travel history.
+ *
+ * This screen fetches the list of past trips from the [TravelHistoryViewModel] and displays them
+ * in a scrollable list. It includes a summary header with aggregate statistics (total trips,
+ * total distance, total points).
+ *
+ * The layout adapts to different screen sizes (Phone vs Tablet).
+ *
+ * @param navController The navigation controller for handling screen transitions.
+ * @param windowSizeClass The window size class to adapt the layout for different screen sizes.
+ * @param viewModel The ViewModel that provides the trip data. Defaults to a new instance if not provided.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: WindowSizeClass) {
-    val viewModel: TravelHistoryViewModel = viewModel()
+fun TravelHistoryScreen(
+    navController: NavHostController,
+    windowSizeClass: WindowSizeClass,
+    viewModel: TravelHistoryViewModel = viewModel()
+) {
     val trips by viewModel.trips.collectAsState()
 
+    // Load trips when the screen is launched
+    LaunchedEffect(Unit) {
+        viewModel.loadUserTrips()
+    }
+
+    // --- Responsive Layout Calculations ---
     val widthClass = windowSizeClass.widthSizeClass
     val heightClass = windowSizeClass.heightSizeClass
 
@@ -68,14 +95,18 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text("Histórico de Viagens") },
+                title = { Text(stringResource(R.string.travel_history_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior
@@ -90,7 +121,8 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                     .padding(horizontal = pagePadding)
             )
         } else {
-            val totalKm = trips.sumOf { it.distanceKm.toDouble() }
+            // Calculate summary statistics
+            val totalKm = trips.sumOf { it.distanceKm }
             val totalPoints = trips.sumOf { it.points }
             val totalTrips = trips.size
             val listState = rememberLazyListState()
@@ -103,6 +135,7 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                 verticalArrangement = Arrangement.spacedBy(itemSpacing),
                 contentPadding = PaddingValues(bottom = contentPaddingBottom)
             ) {
+                // 1. Header with Stats Summary
                 item {
                     SummaryHeader(
                         tripCount = totalTrips,
@@ -112,13 +145,17 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
                         minHeight = summaryMinHeight
                     )
                 }
+                // 2. List of Trip Cards
                 items(trips, key = { it.id }) { trip ->
                     TripCard(
                         date = trip.date,
                         distanceKm = trip.distanceKm,
                         points = trip.points,
-                        id = trip.id,
-                        isTablet = isTablet
+                        duration = trip.duration,
+                        isTablet = isTablet,
+                        onClick = {
+                            navController.navigate("tripDetails/${trip.id}")
+                        }
                     )
                 }
             }
@@ -126,6 +163,15 @@ fun TravelHistoryScreen(navController: NavHostController, windowSizeClass: Windo
     }
 }
 
+/**
+ * Displays a summary header with the total statistics of the user's travel history.
+ *
+ * @param tripCount Total number of trips.
+ * @param totalKm Total distance traveled in kilometers.
+ * @param totalPoints Total points earned.
+ * @param isTablet Boolean indicating if the device is a tablet (adjusts layout direction).
+ * @param minHeight Minimum height for the header container.
+ */
 @Composable
 private fun SummaryHeader(
     tripCount: Int,
@@ -157,6 +203,7 @@ private fun SummaryHeader(
                 )
         ) {
             if (isTablet) {
+                // Tablet Layout: Horizontal arrangement
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -172,12 +219,12 @@ private fun SummaryHeader(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Histórico de Viagens",
+                                stringResource(R.string.travel_history_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "Resumo das tuas viagens",
+                                stringResource(R.string.travel_summary_subtitle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
@@ -185,21 +232,21 @@ private fun SummaryHeader(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatChip(
-                            label = "Viagens",
+                            label = stringResource(R.string.trips_label),
                             value = "$tripCount",
                             isTablet = isTablet,
                             modifier = Modifier.width(140.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         StatChip(
-                            label = "Distância",
+                            label = stringResource(R.string.distance_label),
                             value = String.format("%.1f km", totalKm),
                             isTablet = isTablet,
                             modifier = Modifier.width(160.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         StatChip(
-                            label = "Pontos",
+                            label = stringResource(R.string.points_label),
                             value = "$totalPoints",
                             isTablet = isTablet,
                             modifier = Modifier.width(120.dp)
@@ -207,6 +254,7 @@ private fun SummaryHeader(
                     }
                 }
             } else {
+                // Phone Layout: Vertical arrangement
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -218,12 +266,12 @@ private fun SummaryHeader(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Histórico de Viagens",
+                                stringResource(R.string.travel_history_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "Resumo das tuas viagens",
+                                stringResource(R.string.travel_summary_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
@@ -231,19 +279,19 @@ private fun SummaryHeader(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         StatChip(
-                            label = "Viagens",
+                            label = stringResource(R.string.trips_label),
                             value = "$tripCount",
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
                         )
                         StatChip(
-                            label = "Distância",
+                            label = stringResource(R.string.distance_label),
                             value = String.format("%.1f km", totalKm),
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
                         )
                         StatChip(
-                            label = "Pontos",
+                            label = stringResource(R.string.points_label),
                             value = "$totalPoints",
                             isTablet = isTablet,
                             modifier = Modifier.weight(1f)
@@ -255,6 +303,9 @@ private fun SummaryHeader(
     }
 }
 
+/**
+ * A small card component used to display a single statistic in the header.
+ */
 @Composable
 private fun StatChip(
     label: String,
@@ -294,18 +345,23 @@ private fun StatChip(
     }
 }
 
+/**
+ * Represents a single trip in the history list.
+ */
 @Composable
 private fun TripCard(
     date: String,
     distanceKm: Double,
     points: Int,
-    id: String,
-    isTablet: Boolean
+    duration: String,
+    isTablet: Boolean,
+    onClick: () -> Unit,
 ) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = if (isTablet) 8.dp else 16.dp),
+            .padding(horizontal = if (isTablet) 8.dp else 16.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(if (isTablet) 20.dp else 18.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (isTablet) 6.dp else 4.dp)
     ) {
@@ -326,17 +382,38 @@ private fun TripCard(
                     fontSize = if (isTablet) 18.sp else 16.sp
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    String.format("%.2f km", distanceKm),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        String.format("%.2f km", distanceKm),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Separator
+                    Text(
+                        " • ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    // Icon and Duration
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        duration,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 PointsPill(points = points, isTablet = isTablet)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Detalhes",
+                    stringResource(R.string.details_label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -345,6 +422,9 @@ private fun TripCard(
     }
 }
 
+/**
+ * A small pill-shaped component to display the points earned for a trip.
+ */
 @Composable
 private fun PointsPill(points: Int, isTablet: Boolean) {
     Surface(
@@ -367,7 +447,7 @@ private fun PointsPill(points: Int, isTablet: Boolean) {
             )
             Spacer(Modifier.width(6.dp))
             Text(
-                "$points pts",
+                "$points ${stringResource(R.string.points_abbrev)}",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -377,6 +457,9 @@ private fun PointsPill(points: Int, isTablet: Boolean) {
     }
 }
 
+/**
+ * Displays a placeholder state when the list of trips is empty.
+ */
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -389,12 +472,12 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "Sem viagens ainda",
+                stringResource(R.string.empty_trips_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Quando fizeres viagens, aparecem aqui.",
+                stringResource(R.string.empty_trips_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -402,7 +485,9 @@ private fun EmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-/* ------- Adições mínimas para Preview ------- */
+/**
+ * Helper function to create a fake WindowSizeClass for layout previews.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun fakeWindowSizeClass(

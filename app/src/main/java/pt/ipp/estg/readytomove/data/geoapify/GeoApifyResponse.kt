@@ -2,12 +2,16 @@ package pt.ipp.estg.readytomove.data.geoapify
 
 import com.google.gson.annotations.SerializedName
 
+/**
+ * Data class representing the response from the GeoApify API.
+ */
 data class GeoApifyResponse(
     @SerializedName("type")
     val type: String,
     @SerializedName("features")
     val features: List<Feature>
 ) {
+
     data class Feature(
         @SerializedName("type")
         val type: String,

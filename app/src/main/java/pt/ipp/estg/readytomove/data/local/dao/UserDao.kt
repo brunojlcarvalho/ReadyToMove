@@ -3,6 +3,9 @@ package pt.ipp.estg.readytomove.data.local.dao
 import androidx.room.*
 import pt.ipp.estg.readytomove.data.model.local.UserCache
 
+/**
+ * Data Access Object for the UserCache entity.
+ */
 @Dao
 interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)

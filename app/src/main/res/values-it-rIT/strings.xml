@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReadyToMove</string>
+
+    <string name="login_title">Accedi</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
+    <string name="login_button">Entra</string>
+    <string name="create_account">Crea account</string>
+    <string name="error_fill_fields">Compila tutti i campi</string>
+    <string name="error_to_login">Errore di accesso</string>
+
+    <string name="name_label">Nome</string>
+    <string name="confirm_password_label">Conferma Password</string>
+    <string name="error_password_short">Password troppo breve</string>
+    <string name="error_passwords_match">Le password non corrispondono</string>
+    <string name="error_registering">Errore di registrazione</string>
+    <string name="already_have_account">Ho già un account</string>
+
+    <string name="menu_desc">Menù</string>
+    <string name="close_drawer_desc">Chiudi</string>
+    <string name="nav_map">Mappa</string>
+    <string name="nav_profile">Profilo</string>
+    <string name="nav_travel_history">Cronologia Viaggi</string>
+    <string name="explore_city">Esplora la città</string>
+    <string name="back_description">Indietro</string>
+
+    <string name="center_map_desc">Centra Mappa</string>
+    <string name="night_mode_sensor">Modalità Notte (Sensore Luce)</string>
+    <string name="start_trip">Inizia Viaggio</string>
+    <string name="pause_trip">Pausa</string>
+    <string name="stop_trip">Stop</string>
+    <string name="resume_trip">Riprendi</string>
+    <string name="me_marker_title">Io</string>
+    <string name="point_marker_snippet">Punto</string>
+    <string name="scanner_error">Errore apertura scanner</string>
+
+    <string name="waiting_gps">In attesa del GPS...</string>
+    <string name="error_not_near_point">Devi essere a 10m da un punto (Bus/Bici) per iniziare!</string>
+    <string name="trip_started_at">Viaggio iniziato a: %1$s</string>
+    <string name="error_no_gps">Nessun segnale GPS.</string>
+    <string name="error_end_trip_near_point">Devi essere a 10m da un punto per terminare il viaggio!</string>
+    <string name="error_wrong_vehicle_type">Hai iniziato in %1$s, devi finire nello stesso!</string>
+    <string name="trip_finished_points">Viaggio terminato! Hai guadagnato %1$d punti.</string>
+    <string name="qr_invalid_type">QR Code non valido: Tipo veicolo sconosciuto (%1$s).</string>
+    <string name="qr_error_distance">Devi essere a 10m da un punto per usare questo QR Code!</string>
+    <string name="qr_error_mismatch">QR Code errato! Sei in un punto %1$s, ma il codice è per %2$s.</string>
+    <string name="qr_success_unlock">Veicolo sbloccato: %1$s. Buon viaggio!</string>
+
+    <string name="leaderboard_title">Classifica</string>
+    <string name="top_users_title">Migliori Utenti</string>
+    <string name="top_users_subtitle">Chi è in testa questa settimana</string>
+    <string name="points_abbrev">pt</string>
+
+    <string name="profile_title">Il mio Profilo</string>
+    <string name="logout_button">Disconnetti</string>
+    <string name="trips_label">Viaggi</string>
+    <string name="points_label">Punti</string>
+    <string name="info_card_title">Informazioni</string>
+    <string name="placeholder_new_name">Nuovo nome</string>
+    <string name="save_desc">Salva</string>
+    <string name="cancel_desc">Annulla</string>
+    <string name="edit_name_desc">Modifica nome</string>
+    <string name="desc_avatar">Avatar Utente</string>
+    <string name="desc_change_photo">Cambia Foto</string>
+
+    <string name="camera_error_start">Errore avvio fotocamera</string>
+    <string name="camera_error_capture">Errore scatto foto</string>
+    <string name="camera_desc_capture">Scatta Foto</string>
+    <string name="camera_desc_switch">Cambia Fotocamera</string>
+    <string name="camera_permission_needed">Permesso fotocamera necessario</string>
+
+    <string name="travel_history_title">Cronologia Viaggi</string>
+    <string name="empty_trips_title">Nessun viaggio ancora</string>
+    <string name="empty_trips_subtitle">Quando farai viaggi, appariranno qui.</string>
+    <string name="travel_summary_subtitle">Riepilogo dei tuoi viaggi</string>
+    <string name="distance_label">Distanza</string>
+    <string name="details_label">Dettagli</string>
+
+    <string name="trip_details_title">Dettagli Viaggio</string>
+    <string name="share_sms_desc">Condividi via SMS</string>
+    <string name="trip_not_found">Viaggio non trovato.</string>
+    <string name="statistics_title">Statistiche</string>
+    <string name="duration_label">Durata</string>
+    <string name="map_unavailable">Mappa percorso non disponibile</string>
+    <string name="share_trip_message">Ho appena fatto un viaggio su ReadyToMove! 🏃‍♂️\n\n📅 Data: %1$s\n📏 Distanza: %2$s\n⏱️ Durata: %3$s\n⭐ Punti: %4$d pt\n\nVieni a esplorare la città con me!</string>
+
+    <string name="trip_route_title">Percorso</string>
+    <string name="trip_start_label">Inizio</string>
+    <string name="trip_end_label">Fine</string>
+    <string name="unknown_location">Sconosciuto</string>
+    <string name="trip_ongoing">In corso...</string>
+
+    <string name="notification_trip_active">In viaggio... (GPS Attivo)</string>
+    <string name="channel_trip_active">Viaggio Attivo</string>
+
+    <string name="channel_leaderboard_name">Aggiornamenti Classifica</string>
+    <string name="channel_leaderboard_desc">Notifiche sui cambiamenti di classifica</string>
+    <string name="notif_rank_drop_title">Hai perso una posizione!</string>
+    <string name="notif_rank_drop_body">Sei sceso dal #%1$d al #%2$d. Fai un viaggio per recuperare!</string>
+</resources>
