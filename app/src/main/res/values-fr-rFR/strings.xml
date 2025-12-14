@@ -2,47 +2,56 @@
 <resources>
     <string name="app_name">ReadyToMove</string>
 
-    // Login Strings
-    <string name="login_title">Connexion</string>
+    <string name="login_title">Se connecter</string>
     <string name="email_label">E-mail</string>
     <string name="password_label">Mot de passe</string>
-    <string name="login_button">Se connecter</string>
+    <string name="login_button">Entrer</string>
     <string name="create_account">Créer un compte</string>
-    <string name="error_fill_fields">Veuillez remplir tous les champs</string>
-    <string name="error_to_login">Erreur lors de la connexion</string>
+    <string name="error_fill_fields">Remplissez tous les champs</string>
+    <string name="error_to_login">Erreur de connexion</string>
 
-    // Register Strings
     <string name="name_label">Nom</string>
     <string name="confirm_password_label">Confirmer le mot de passe</string>
     <string name="error_password_short">Mot de passe trop court</string>
     <string name="error_passwords_match">Les mots de passe ne correspondent pas</string>
-    <string name="error_registering">Erreur lors de l\'inscription</string>
+    <string name="error_registering">Erreur d\'inscription</string>
     <string name="already_have_account">J\'ai déjà un compte</string>
 
-    // Leaderboard Strings
-    <string name="leaderboard_title">Classement</string>
-    <string name="back_description">Retour</string>
-    <string name="top_users_title">Meilleurs Utilisateurs</string>
-    <string name="top_users_subtitle">Qui est en tête cette semaine</string>
-    <string name="points_abbrev">pts</string>
-
-    // Map Strings
     <string name="menu_desc">Menu</string>
-    <string name="center_map_desc">Centrer</string>
-    <string name="night_mode_sensor">Mode Nuit (Capteur de lumière)</string>
-    <string name="start_trip">Démarrer</string>
-    <string name="pause_trip">Pause</string>
-    <string name="stop_trip">Arrêter</string>
-    <string name="resume_trip">Reprendre</string>
-    <string name="explore_city">Explorez la ville</string>
     <string name="close_drawer_desc">Fermer</string>
     <string name="nav_map">Carte</string>
     <string name="nav_profile">Profil</string>
     <string name="nav_travel_history">Historique des trajets</string>
+    <string name="explore_city">Explorez la ville</string>
+    <string name="back_description">Retour</string>
+
+    <string name="center_map_desc">Centrer la carte</string>
+    <string name="night_mode_sensor">Mode nuit (Capteur de lumière)</string>
+    <string name="start_trip">Commencer le trajet</string>
+    <string name="pause_trip">Pause</string>
+    <string name="stop_trip">Arrêter</string>
+    <string name="resume_trip">Reprendre</string>
     <string name="me_marker_title">Moi</string>
     <string name="point_marker_snippet">Point</string>
+    <string name="scanner_error">Erreur lors de l\'ouverture du scanner</string>
 
-    //Profile Strings
+    <string name="waiting_gps">En attente du signal GPS...</string>
+    <string name="error_not_near_point">Vous devez être à 10m d\'un point (Bus/Vélo) pour commencer !</string>
+    <string name="trip_started_at">Trajet commencé à : %1$s</string>
+    <string name="error_no_gps">Pas de signal GPS.</string>
+    <string name="error_end_trip_near_point">Vous devez être à 10m d\'un point pour terminer le trajet !</string>
+    <string name="error_wrong_vehicle_type">Vous avez commencé en %1$s, vous devez finir sur le même type !</string>
+    <string name="trip_finished_points">Trajet terminé ! Vous avez gagné %1$d points.</string>
+    <string name="qr_invalid_type">QR Code invalide : Type de véhicule inconnu (%1$s).</string>
+    <string name="qr_error_distance">Vous devez être à 10m d\'un point pour utiliser ce QR Code !</string>
+    <string name="qr_error_mismatch">Mauvais QR Code ! Vous êtes à un point %1$s, mais le code est pour %2$s.</string>
+    <string name="qr_success_unlock">Véhicule déverrouillé : %1$s. Bon voyage !</string>
+
+    <string name="leaderboard_title">Classement</string>
+    <string name="top_users_title">Meilleurs utilisateurs</string>
+    <string name="top_users_subtitle">Qui est en tête cette semaine</string>
+    <string name="points_abbrev">pts</string>
+
     <string name="profile_title">Mon profil</string>
     <string name="logout_button">Déconnexion</string>
     <string name="trips_label">Trajets</string>
@@ -52,31 +61,41 @@
     <string name="save_desc">Enregistrer</string>
     <string name="cancel_desc">Annuler</string>
     <string name="edit_name_desc">Modifier le nom</string>
+    <string name="desc_avatar">Avatar de l\'utilisateur</string>
+    <string name="desc_change_photo">Changer la photo</string>
 
-    // Travel History Strings
+    <string name="camera_error_start">Erreur au démarrage de la caméra</string>
+    <string name="camera_error_capture">Erreur lors de la prise de photo</string>
+    <string name="camera_desc_capture">Prendre une photo</string>
+    <string name="camera_desc_switch">Changer de caméra</string>
+    <string name="camera_permission_needed">Permission de caméra requise</string>
+
     <string name="travel_history_title">Historique des trajets</string>
     <string name="empty_trips_title">Pas encore de trajets</string>
-    <string name="empty_trips_subtitle">Lorsque vous effectuez des trajets, ils apparaîtront ici.</string>
+    <string name="empty_trips_subtitle">Vos trajets apparaîtront ici.</string>
     <string name="travel_summary_subtitle">Résumé de vos trajets</string>
     <string name="distance_label">Distance</string>
     <string name="details_label">Détails</string>
 
-    // Trip Details Strings
     <string name="trip_details_title">Détails du trajet</string>
     <string name="share_sms_desc">Partager par SMS</string>
-    <string name="trip_not_found">Trajet non trouvé.</string>
+    <string name="trip_not_found">Trajet introuvable.</string>
     <string name="statistics_title">Statistiques</string>
     <string name="duration_label">Durée</string>
-    <string name="map_unavailable">Carte d\'itinéraire indisponible</string>
-    <string name="share_trip_message">Je viens de terminer un trajet sur ReadyToMove ! 🏃‍♂️\n\n📅 Date : %1$s\n📏 Distance : %2$s\n⏱️ Durée : %3$s\n⭐ Points : %4$d pts\n\nViens explorer la ville avec moi !</string>
+    <string name="map_unavailable">Carte du trajet indisponible</string>
+    <string name="share_trip_message">Je viens de faire un trajet sur ReadyToMove ! 🏃‍♂️\n\n📅 Date : %1$s\n📏 Distance : %2$s\n⏱️ Durée : %3$s\n⭐ Points : %4$d pts\n\nViens explorer la ville avec moi !</string>
 
-    // MapViewModel Strings
-    <string name="waiting_gps">En attente de la localisation GPS...</string>
-    <string name="error_not_near_point">Vous devez être à moins de 10m d\'un point (Bus/Vélo) pour commencer !</string>
-    <string name="trip_started_at">Trajet commencé à : %1$s</string>
-    <string name="error_no_gps">Pas de GPS.</string>
-    <string name="error_end_trip_near_point">Vous devez être à moins de 10m d\'un point pour terminer le trajet !</string>
-    <string name="error_wrong_vehicle_type">Vous avez commencé sur %1$s, vous devez finir sur le même type !</string>
-    <string name="trip_finished_points">Trajet terminé ! Vous avez gagné %1$d points.</string>
+    <string name="trip_route_title">Itinéraire</string>
+    <string name="trip_start_label">Début</string>
+    <string name="trip_end_label">Fin</string>
+    <string name="unknown_location">Inconnu</string>
+    <string name="trip_ongoing">En cours...</string>
 
+    <string name="notification_trip_active">En déplacement... (GPS Actif)</string>
+    <string name="channel_trip_active">Trajet actif</string>
+
+    <string name="channel_leaderboard_name">Mises à jour du classement</string>
+    <string name="channel_leaderboard_desc">Notifications sur les changements de classement</string>
+    <string name="notif_rank_drop_title">Vous avez perdu une place !</string>
+    <string name="notif_rank_drop_body">Vous êtes passé de #%1$d à #%2$d. Faites un trajet pour récupérer !</string>
 </resources>

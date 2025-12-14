@@ -27,8 +27,8 @@ object NotificationHelper {
      */
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Leaderboard Updates"
-            val descriptionText = "Notifications about changes in ranking"
+            val name = context.getString(R.string.channel_leaderboard_name)
+            val descriptionText = context.getString(R.string.channel_leaderboard_desc)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID_LEADERBOARD, name, importance).apply {
                 description = descriptionText
@@ -56,8 +56,8 @@ object NotificationHelper {
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID_LEADERBOARD)
             .setSmallIcon(R.drawable.ic_scooter)
-            .setContentTitle("You lost a position!")
-            .setContentText("You dropped from #$oldRank to #$newRank. Go for a ride to recover!")
+            .setContentTitle(context.getString(R.string.notif_rank_drop_title))
+            .setContentText(context.getString(R.string.notif_rank_drop_body, oldRank, newRank))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
 

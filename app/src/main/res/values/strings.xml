@@ -1,47 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ReadyToMove</string>
 
-    // Login Strings
     <string name="login_title">Login</string>
     <string name="email_label">Email</string>
     <string name="password_label">Password</string>
-    <string name="login_button">Sign In</string>
+    <string name="login_button">Login</string>
     <string name="create_account">Create account</string>
-    <string name="error_fill_fields">Please fill all fields</string>
-    <string name="error_to_login">Error logging in</string>
+    <string name="error_fill_fields">Fill all fields</string>
+    <string name="error_to_login">Login error</string>
 
-    // Register Strings
     <string name="name_label">Name</string>
     <string name="confirm_password_label">Confirm Password</string>
     <string name="error_password_short">Password too short</string>
     <string name="error_passwords_match">Passwords do not match</string>
-    <string name="error_registering">Registration failed</string>
+    <string name="error_registering">Registration error</string>
     <string name="already_have_account">I already have an account</string>
 
-    // Leaderboard Strings
-    <string name="leaderboard_title">Leaderboard</string>
-    <string name="back_description">Back</string>
-    <string name="top_users_title">Top Users</string>
-    <string name="top_users_subtitle">Who is leading this week</string>
-    <string name="points_abbrev">pts</string>
-
-    // Map Strings
     <string name="menu_desc">Menu</string>
-    <string name="center_map_desc">Center</string>
+    <string name="close_drawer_desc">Close</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_travel_history">Trip History</string>
+    <string name="explore_city">Explore the city</string>
+    <string name="back_description">Back</string>
+
+    <string name="center_map_desc">Center Map</string>
     <string name="night_mode_sensor">Night Mode (Light Sensor)</string>
     <string name="start_trip">Start Trip</string>
     <string name="pause_trip">Pause</string>
     <string name="stop_trip">Stop</string>
     <string name="resume_trip">Resume</string>
-    <string name="explore_city">Explore the city</string>
-    <string name="close_drawer_desc">Close</string>
-    <string name="nav_map">Map</string>
-    <string name="nav_profile">Profile</string>
-    <string name="nav_travel_history">Trip History</string>
     <string name="me_marker_title">Me</string>
     <string name="point_marker_snippet">Point</string>
+    <string name="scanner_error">Error opening scanner</string>
 
-    // Profile Strings
+    <string name="waiting_gps">Waiting for GPS location...</string>
+    <string name="error_not_near_point">You must be within 10m of a point (Bus/Bike) to start!</string>
+    <string name="trip_started_at">Trip started at: %1$s</string>
+    <string name="error_no_gps">No GPS signal.</string>
+    <string name="error_end_trip_near_point">You must be within 10m of a point to end the trip!</string>
+    <string name="error_wrong_vehicle_type">You started at %1$s, you must end at the same type!</string>
+    <string name="trip_finished_points">Trip finished! You earned %1$d points.</string>
+    <string name="qr_invalid_type">Invalid QR Code: Unknown vehicle type (%1$s).</string>
+    <string name="qr_error_distance">You must be within 10m of a point to use this QR Code!</string>
+    <string name="qr_error_mismatch">Wrong QR Code! You are at a %1$s point, but the code is for %2$s.</string>
+    <string name="qr_success_unlock">Vehicle unlocked: %1$s. Have a nice trip!</string>
+
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="top_users_title">Top Users</string>
+    <string name="top_users_subtitle">Who is leading this week</string>
+    <string name="points_abbrev">pts</string>
+
     <string name="profile_title">My Profile</string>
     <string name="logout_button">Logout</string>
     <string name="trips_label">Trips</string>
@@ -51,31 +61,41 @@
     <string name="save_desc">Save</string>
     <string name="cancel_desc">Cancel</string>
     <string name="edit_name_desc">Edit name</string>
+    <string name="desc_avatar">User Avatar</string>
+    <string name="desc_change_photo">Change Photo</string>
 
-    // Travel History Strings
+    <string name="camera_error_start">Error starting camera</string>
+    <string name="camera_error_capture">Error capturing photo</string>
+    <string name="camera_desc_capture">Take Photo</string>
+    <string name="camera_desc_switch">Switch Camera</string>
+    <string name="camera_permission_needed">Camera permission required</string>
+
     <string name="travel_history_title">Trip History</string>
     <string name="empty_trips_title">No trips yet</string>
-    <string name="empty_trips_subtitle">When you make trips, they will appear here.</string>
+    <string name="empty_trips_subtitle">When you take trips, they appear here.</string>
     <string name="travel_summary_subtitle">Summary of your trips</string>
     <string name="distance_label">Distance</string>
     <string name="details_label">Details</string>
 
-    // Trip Details Strings
     <string name="trip_details_title">Trip Details</string>
     <string name="share_sms_desc">Share via SMS</string>
     <string name="trip_not_found">Trip not found.</string>
     <string name="statistics_title">Statistics</string>
     <string name="duration_label">Duration</string>
     <string name="map_unavailable">Route map unavailable</string>
-    <string name="share_trip_message">I just finished a trip on ReadyToMove! 🏃‍♂️\n\n📅 Date: %1$s\n📏 Distance: %2$s\n⏱️ Duration: %3$s\n⭐ Points: %4$d pts\n\nCome explore the city with me!</string>
+    <string name="share_trip_message">I just took a trip on ReadyToMove! 🏃‍♂️\n\n📅 Date: %1$s\n📏 Distance: %2$s\n⏱️ Duration: %3$s\n⭐ Points: %4$d pts\n\nCome explore the city with me!</string>
 
-    // MapViewModel Strings
-    <string name="waiting_gps">Waiting for GPS location...</string>
-    <string name="error_not_near_point">You must be within 10m of a point (Bus/Bike) to start!</string>
-    <string name="trip_started_at">Trip started at: %1$s</string>
-    <string name="error_no_gps">No GPS.</string>
-    <string name="error_end_trip_near_point">You must be within 10m of a point to end the trip!</string>
-    <string name="error_wrong_vehicle_type">You started on %1$s, you must end on the same type!</string>
-    <string name="trip_finished_points">Trip finished! You earned %1$d points.</string>
+    <string name="trip_route_title">Route</string>
+    <string name="trip_start_label">Start</string>
+    <string name="trip_end_label">End</string>
+    <string name="unknown_location">Unknown</string>
+    <string name="trip_ongoing">Ongoing...</string>
 
+    <string name="notification_trip_active">Traveling... (GPS Active)</string>
+    <string name="channel_trip_active">Active Trip</string>
+
+    <string name="channel_leaderboard_name">Leaderboard Updates</string>
+    <string name="channel_leaderboard_desc">Notifications about ranking changes</string>
+    <string name="notif_rank_drop_title">You lost a position!</string>
+    <string name="notif_rank_drop_body">You dropped from #%1$d to #%2$d. Go for a ride to recover!</string>
 </resources>

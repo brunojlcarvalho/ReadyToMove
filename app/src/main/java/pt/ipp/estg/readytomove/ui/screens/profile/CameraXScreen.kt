@@ -30,6 +30,8 @@ import java.io.File
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import pt.ipp.estg.readytomove.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * A screen that implements a custom camera interface using CameraX.
@@ -93,7 +95,7 @@ fun CameraXScreen(
                     imageCapture
                 )
             } catch (e: Exception) {
-                Toast.makeText(context, "Error starting camera", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.camera_error_start), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -116,7 +118,7 @@ fun CameraXScreen(
                             onPhotoTaken(uri.toString())
                         },
                         onError = {
-                            Toast.makeText(context, "Error capturing photo", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.camera_error_capture), Toast.LENGTH_SHORT).show()
                         }
                     )
                 },
@@ -127,7 +129,7 @@ fun CameraXScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Camera,
-                    contentDescription = "Take Photo",
+                    contentDescription = stringResource(R.string.camera_desc_capture),
                     tint = Color.White,
                     modifier = Modifier.size(64.dp)
                 )
@@ -150,7 +152,7 @@ fun CameraXScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Cameraswitch,
-                    contentDescription = "Switch Camera",
+                    contentDescription = stringResource(R.string.camera_desc_switch),
                     tint = Color.White,
                     modifier = Modifier.size(40.dp)
                 )
@@ -159,7 +161,7 @@ fun CameraXScreen(
     } else {
         // Fallback UI if permission is denied
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Camera permission is required")
+            Text(stringResource(R.string.camera_permission_needed))
         }
     }
 }
