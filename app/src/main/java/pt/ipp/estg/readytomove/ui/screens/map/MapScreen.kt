@@ -774,6 +774,6 @@ fun scanQrCode(context: Context, onSuccess: (String) -> Unit) {
             barcode.rawValue?.let { onSuccess(it) }
         }
         .addOnFailureListener {
-            Toast.makeText(context, "Error opening scanner", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.scanner_error), Toast.LENGTH_SHORT).show()
         }
 }

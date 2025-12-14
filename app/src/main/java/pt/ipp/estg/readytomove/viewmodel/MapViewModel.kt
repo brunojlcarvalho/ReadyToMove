@@ -401,7 +401,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
             // Convert to uppercase and try to match Enum OperatorType
             OperatorType.valueOf(qrContent.uppercase())
         } catch (e: Exception) {
-            _uiMessage.value = "Invalid QR Code: Unknown vehicle type ($qrContent)."
+            _uiMessage.value = getApplication<Application>().getString(R.string.qr_invalid_type, qrContent)
             return
         }
 
@@ -409,13 +409,13 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         val nearestPoint = findNearestOperator(currentLoc, 10.0)
 
         if (nearestPoint == null) {
-            _uiMessage.value = "You must be within 10m of a point to use this QR Code!"
+            _uiMessage.value = getApplication<Application>().getString(R.string.qr_error_distance)
             return
         }
 
         // Validate if the QR Code matches the nearby point type
         if (nearestPoint.type != detectedType) {
-            _uiMessage.value = "Wrong QR Code! You are at a ${nearestPoint.type} point, but the code is for $detectedType."
+            _uiMessage.value = getApplication<Application>().getString(R.string.qr_error_mismatch, nearestPoint.type, detectedType)
             return
         }
 
@@ -425,7 +425,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
         resetTripData()
         isTracking = true
         _isTrackingState.value = true
-        _uiMessage.value = "Vehicle unlocked: ${detectedType.name}. Enjoy your trip!"
+        _uiMessage.value = getApplication<Application>().getString(R.string.qr_success_unlock, detectedType.name)
 
         stopLocalLocationUpdates()
 

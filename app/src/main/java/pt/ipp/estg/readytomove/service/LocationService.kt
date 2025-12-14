@@ -175,8 +175,8 @@ class LocationService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("ReadyToMove")
-            .setContentText("Traveling... (GPS Active)")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notification_trip_active))
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setContentIntent(pendingIntent) // Makes the notification clickable
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -192,7 +192,7 @@ class LocationService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Active Trip",
+                getString(R.string.channel_trip_active),
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)

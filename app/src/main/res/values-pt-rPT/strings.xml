@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">ReadyToMove</string>
 
-    // Login Strings
     <string name="login_title">Iniciar Sessão</string>
     <string name="email_label">Email</string>
     <string name="password_label">Password</string>
@@ -11,7 +10,6 @@
     <string name="error_fill_fields">Preenche todos os campos</string>
     <string name="error_to_login">Erro ao iniciar sessão</string>
 
-    // Register Strings
     <string name="name_label">Nome</string>
     <string name="confirm_password_label">Confirmar Password</string>
     <string name="error_password_short">Password muito curta</string>
@@ -19,30 +17,41 @@
     <string name="error_registering">Erro ao registar</string>
     <string name="already_have_account">Já tenho conta</string>
 
-    // Leaderboard Strings
-    <string name="leaderboard_title">Leaderboard</string>
-    <string name="back_description">Voltar</string>
-    <string name="top_users_title">Top Utilizadores</string>
-    <string name="top_users_subtitle">Quem está a liderar esta semana</string>
-    <string name="points_abbrev">pts</string>
-
-    // Map Strings
     <string name="menu_desc">Menu</string>
-    <string name="center_map_desc">Centrar</string>
+    <string name="close_drawer_desc">Fechar</string>
+    <string name="nav_map">Mapa</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_travel_history">Histórico de Viagens</string>
+    <string name="explore_city">Explora a cidade</string>
+    <string name="back_description">Voltar</string>
+
+    <string name="center_map_desc">Centrar Mapa</string>
     <string name="night_mode_sensor">Modo Noturno (Sensor de Luz)</string>
     <string name="start_trip">Iniciar Viagem</string>
     <string name="pause_trip">Pausar</string>
     <string name="stop_trip">Parar</string>
     <string name="resume_trip">Retomar</string>
-    <string name="explore_city">Explora a cidade</string>
-    <string name="close_drawer_desc">Fechar</string>
-    <string name="nav_map">Mapa</string>
-    <string name="nav_profile">Perfil</string>
-    <string name="nav_travel_history">Histórico de Viagens</string>
     <string name="me_marker_title">Eu</string>
     <string name="point_marker_snippet">Ponto</string>
+    <string name="scanner_error">Erro ao abrir scanner</string>
 
-    // Profile Strings
+    <string name="waiting_gps">A aguardar localização GPS...</string>
+    <string name="error_not_near_point">Tens de estar a 10m de um ponto (Bus/Bike) para iniciar!</string>
+    <string name="trip_started_at">Viagem iniciada em: %1$s</string>
+    <string name="error_no_gps">Sem sinal de GPS.</string>
+    <string name="error_end_trip_near_point">Tens de estar a 10m de um ponto para terminar a viagem!</string>
+    <string name="error_wrong_vehicle_type">Iniciaste em %1$s, tens de acabar num igual!</string>
+    <string name="trip_finished_points">Viagem terminada! Ganhaste %1$d pontos.</string>
+    <string name="qr_invalid_type">QR Code inválido: Tipo de veículo desconhecido (%1$s).</string>
+    <string name="qr_error_distance">Tens de estar a 10m de um ponto para usar este QR Code!</string>
+    <string name="qr_error_mismatch">QR Code errado! Estás num ponto de %1$s, mas o código é de %2$s.</string>
+    <string name="qr_success_unlock">Veículo desbloqueado: %1$s. Boa viagem!</string>
+
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="top_users_title">Top Utilizadores</string>
+    <string name="top_users_subtitle">Quem está a liderar esta semana</string>
+    <string name="points_abbrev">pts</string>
+
     <string name="profile_title">O meu Perfil</string>
     <string name="logout_button">Terminar sessão</string>
     <string name="trips_label">Viagens</string>
@@ -52,8 +61,15 @@
     <string name="save_desc">Guardar</string>
     <string name="cancel_desc">Cancelar</string>
     <string name="edit_name_desc">Editar nome</string>
+    <string name="desc_avatar">Avatar do Utilizador</string>
+    <string name="desc_change_photo">Alterar Foto</string>
 
-    // Travel History Strings
+    <string name="camera_error_start">Erro ao iniciar câmara</string>
+    <string name="camera_error_capture">Erro ao capturar foto</string>
+    <string name="camera_desc_capture">Tirar Foto</string>
+    <string name="camera_desc_switch">Mudar Câmara</string>
+    <string name="camera_permission_needed">É necessária permissão de câmara</string>
+
     <string name="travel_history_title">Histórico de Viagens</string>
     <string name="empty_trips_title">Sem viagens ainda</string>
     <string name="empty_trips_subtitle">Quando fizeres viagens, aparecem aqui.</string>
@@ -61,7 +77,6 @@
     <string name="distance_label">Distância</string>
     <string name="details_label">Detalhes</string>
 
-    // Trip Details Strings
     <string name="trip_details_title">Detalhes da Viagem</string>
     <string name="share_sms_desc">Partilhar por SMS</string>
     <string name="trip_not_found">Viagem não encontrada.</string>
@@ -70,12 +85,18 @@
     <string name="map_unavailable">Mapa da rota indisponível</string>
     <string name="share_trip_message">Acabei de fazer uma viagem no ReadyToMove! 🏃‍♂️\n\n📅 Data: %1$s\n📏 Distância: %2$s\n⏱️ Duração: %3$s\n⭐ Pontos: %4$d pts\n\nVem explorar a cidade comigo!</string>
 
-    // MapViewModel Strings
-    <string name="waiting_gps">A aguardar localização GPS...</string>
-    <string name="error_not_near_point">Tens de estar a 10m de um ponto (Bus/Bike) para iniciar!</string>
-    <string name="trip_started_at">Viagem iniciada em: %1$s</string>
-    <string name="error_no_gps">Sem GPS.</string>
-    <string name="error_end_trip_near_point">Tens de estar a 10m de um ponto para terminar a viagem!</string>
-    <string name="error_wrong_vehicle_type">Iniciaste em %1$s, tens de acabar num igual!</string>
-    <string name="trip_finished_points">Viagem terminada! Ganhaste %1$d pontos.</string>
+    <string name="trip_route_title">Percurso</string>
+    <string name="trip_start_label">Início</string>
+    <string name="trip_end_label">Fim</string>
+    <string name="unknown_location">Desconhecido</string>
+    <string name="trip_ongoing">Em curso...</string>
+
+    <string name="notification_trip_active">A viajar... (GPS Ativo)</string>
+    <string name="channel_trip_active">Viagem Ativa</string>
+
+    <string name="channel_leaderboard_name">Atualizações da Leaderboard</string>
+    <string name="channel_leaderboard_desc">Notificações sobre alterações no ranking</string>
+    <string name="notif_rank_drop_title">Perdeste uma posição!</string>
+    <string name="notif_rank_drop_body">Desceste do #%1$d para o #%2$d. Faz uma viagem para recuperar!</string>
+
 </resources>

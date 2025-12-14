@@ -419,7 +419,7 @@ private fun ProfileHeader(
                     if (avatarUrl != null) {
                         SubcomposeAsyncImage(
                             model = avatarUrl,
-                            contentDescription = "Avatar",
+                            contentDescription = stringResource(R.string.desc_avatar),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
                             // Show the placeholder letter if loading fails (e.g., local file deleted)
@@ -445,7 +445,7 @@ private fun ProfileHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Change Photo",
+                        contentDescription = stringResource(R.string.desc_change_photo),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(if (isTablet) 24.dp else 20.dp)
                     )
@@ -487,10 +487,10 @@ private fun ProfileHeader(
                             placeholder = { Text(stringResource(R.string.placeholder_new_name), color = MaterialTheme.colorScheme.onPrimary.copy(alpha=0.7f)) }
                         )
                         IconButton(onClick = onSaveEdit) {
-                            Icon(Icons.Default.Check, contentDescription = "Save", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onCancelEdit) {
-                            Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.onPrimary)
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel_desc), tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 } else {

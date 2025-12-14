@@ -203,37 +203,37 @@ private fun TripDetailsContent(
             .padding(if (isTablet) 32.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // 1. Header Card (Points & Date)
+        // Header Card (Points & Date)
         PointsHeaderCard(points = trip.points, date = trip.date)
 
         Text(
-            "Route", // Could be extracted to string resource
+            stringResource(R.string.trip_route_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
 
-        // 2. Start and End Location Cards
+        // Start and End Location Cards
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LocationInfoCard(
-                title = "Start",
-                address = trip.startLocation ?: "Unknown",
+                title = stringResource(R.string.trip_start_label),
+                address = trip.startLocation ?: stringResource(R.string.unknown_location),
                 time = trip.startTimeFormatted,
                 icon = Icons.Default.TripOrigin,
-                color = Color(0xFF4CAF50), // Green
+                color = Color(0xFF4CAF50),
                 modifier = Modifier.weight(1f)
             )
 
             LocationInfoCard(
-                title = "End",
-                address = trip.endLocation ?: "Unknown",
-                time = trip.endTimeFormatted.ifEmpty { "--:--" },
+                title = stringResource(R.string.trip_end_label),
+                address = trip.endLocation ?: stringResource(R.string.unknown_location),
+                time = trip.endTimeFormatted.ifEmpty { stringResource(R.string.trip_ongoing) },
                 icon = Icons.Default.LocationOn,
-                color = Color(0xFFF44336), // Red
+                color = Color(0xFFF44336),
                 modifier = Modifier.weight(1f)
             )
         }
 
-        // 3. Map Section
+        // Map Section
         if (routePoints.isNotEmpty()) {
             Card(
                 modifier = Modifier
@@ -285,14 +285,14 @@ private fun TripDetailsContent(
                     // Start Marker (Green)
                     Marker(
                         state = MarkerState(position = routePoints.first()),
-                        title = "Start",
+                        title = stringResource(R.string.trip_start_label),
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                     )
 
                     // End Marker (Red)
                     Marker(
                         state = MarkerState(position = routePoints.last()),
-                        title = "End",
+                        title = stringResource(R.string.trip_end_label),
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
                 }
