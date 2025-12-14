@@ -396,8 +396,8 @@ fun MapScreen(
                         }
                     },
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 810.dp, end = 16.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 65.dp, end = 16.dp)
                         .size(40.dp),
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.primary,
